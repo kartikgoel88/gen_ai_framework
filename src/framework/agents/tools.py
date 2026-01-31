@@ -37,32 +37,16 @@ def build_mcp_tools(mcp_client: Any) -> list[BaseTool]:
 
     result = []
     for info in tools_list:
-        name = info.get("name", "unknown")
-        description = info.get("description", f"MCP tool: {name}")
+        tool_name = info.get("name", "unknown")
+        tool_description = info.get("description", f"MCP tool: {tool_name}")
+        mcp = mcp_client
 
         class MCPToolInput(BaseModel):
             arguments: dict[str, Any] = Field(default_factory=dict, description="Tool arguments as JSON object")
 
-        class MCPTool(BaseTool):
-            name: str = name
-            description: str = description
-            args_schema: type[BaseModel] = MCPToolInput
-            _mcp_client: Any = None
-            _tool_name: str = name
-
-            def _run(self, arguments: Optional[dict] = None) -> str:
-                out = self._mcp_client.call_tool(self._tool_name, arguments or {})
-                if "error" in out:
-                    return f"Error: {out['error']}"
-                return out.get("result", str(out))
-
-        # Create a closure per tool so _tool_name is bound
-        tool_name = name
-        mcp = mcp_client
-
         class MCPToolBound(BaseTool):
             name: str = tool_name
-            description: str = description
+            description: str = tool_description
             args_schema: type[BaseModel] = MCPToolInput
 
             def _run(self, arguments: Optional[dict] = None) -> str:

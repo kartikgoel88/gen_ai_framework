@@ -2,6 +2,7 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 
 from ..config import get_settings
 
@@ -36,6 +37,12 @@ def create_app(
 
     @app.get("/")
     def root():
+        """Redirect root to API docs."""
+        return RedirectResponse(url="/docs", status_code=302)
+
+    @app.get("/info")
+    def info():
+        """Service info (for health checks or discovery)."""
         return {"service": title, "version": version, "docs": "/docs"}
 
     return app

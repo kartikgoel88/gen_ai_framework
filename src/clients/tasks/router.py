@@ -5,7 +5,7 @@ from typing import Optional, Any, List
 
 from fastapi import APIRouter, Depends, UploadFile, File
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from src.framework.api.deps import (
     get_llm,
@@ -173,7 +173,7 @@ class ChainInvokeRequest(BaseModel):
     human_template: Optional[str] = None
     top_k: Optional[int] = None
     labels: Optional[List[str]] = None  # For classification chain
-    schema: Optional[str] = None  # For extraction chain (e.g. "title, author, date")
+    output_schema: Optional[str] = Field(None, alias="schema")  # For extraction chain (e.g. "title, author, date")
 
 
 @router.post("/chain/invoke")
@@ -221,7 +221,7 @@ def chain_invoke(
         chain = ClassificationChain(llm=llm, labels=labels)
         return {"output": chain.invoke(inputs)}
     if chain_type == "extraction":
-        schema = body.schema or inputs.get("schema") or "key facts and entities"
+        schema = body.output_schema or inputs.get("schema") or "key facts and entities"
         chain = ExtractionChain(llm=llm, schema=schema)
         return {"output": chain.invoke(inputs)}
     return {

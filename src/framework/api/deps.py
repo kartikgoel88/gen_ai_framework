@@ -237,17 +237,17 @@ def get_rag(
     )
 
 
+def get_pdf_ocr_processor() -> PdfOcrProcessor:
+    """Dependency that returns the PDF processor (PyMuPDF + pytesseract OCR fallback)."""
+    return PdfOcrProcessor(dpi=300, min_text_len=10)
+
+
 def get_document_processor(
     settings: Annotated[FrameworkSettings, Depends(get_settings_dep)],
     pdf_ocr_processor: PdfOcrProcessor = Depends(get_pdf_ocr_processor),
 ) -> DocumentProcessor:
     """Dependency that returns the document processor (PDFs use PyMuPDF + pytesseract when pdf_ocr_processor is injected)."""
     return DocumentProcessor(upload_dir=settings.UPLOAD_DIR, pdf_processor=pdf_ocr_processor)
-
-
-def get_pdf_ocr_processor() -> PdfOcrProcessor:
-    """Dependency that returns the PDF processor (PyMuPDF + pytesseract OCR fallback)."""
-    return PdfOcrProcessor(dpi=300, min_text_len=10)
 
 
 def get_langchain_loader() -> LangChainDocProcessor:

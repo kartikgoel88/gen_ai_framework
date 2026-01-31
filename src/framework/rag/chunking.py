@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 # Strategy: recursive_character (default) vs sentence (sentence-boundary first)
 RECURSIVE_SEPARATORS = ["\n\n", "\n", " ", ""]
