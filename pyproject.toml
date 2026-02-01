@@ -29,7 +29,8 @@ dependencies = [
     "Pillow>=10.0.0",
     # Docling
     "docling>=2.0.0",
-    # PDF with OCR fallback (PyMuPDF + pytesseract)
+    # PDF with OCR fallback (PyMuPDF + pytesseract). pytesseract is the Python wrapper;
+    # the Tesseract binary must be installed separately: brew install tesseract (macOS), apt install tesseract-ocr (Linux).
     "pymupdf>=1.23.0",
     "pytesseract>=0.3.10",
     "opencv-python-headless>=4.8.0",
@@ -46,6 +47,7 @@ dependencies = [
     "langgraph>=0.2.0",
     "langgraph-checkpoint>=2.0.0",
     "pytest>=7.4.3",
+    "streamlit>=1.28.0",
 ]
 
 [project.optional-dependencies]

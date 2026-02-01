@@ -25,12 +25,21 @@ else
     echo ".env already exists."
 fi
 
-# Create directories used by the app
-mkdir -p uploads data/chroma_db data/prompts data/feedback data/golden output/batch
-echo "Created uploads/, data/chroma_db/, data/prompts/, data/feedback/, data/golden/, output/batch/."
+# Create directories used by the app and UI
+mkdir -p uploads uploads/ui_uploads uploads/batch_bills uploads/batch_zips uploads/batch_folders
+mkdir -p data/chroma_db data/prompts data/feedback data/golden output/batch
+echo "Created uploads/ (and subdirs), data/, output/batch/."
+
+# Optional: Tesseract for PDF OCR (scanned/image-only PDFs)
+if command -v tesseract &> /dev/null; then
+    echo "Tesseract found: $(tesseract --version 2>/dev/null | head -1 || true)"
+else
+    echo "Optional: Install Tesseract for OCR on scanned PDFs: brew install tesseract (macOS), apt install tesseract-ocr (Linux)."
+fi
 
 echo ""
 echo "Setup complete."
-echo "  Run API: uv run ./run.sh  (or: uv run uvicorn src.main:app --reload)"
+echo "  Run API:    ./run.sh          (or: uv run uvicorn src.main:app --reload)"
+echo "  Run UI:    ./run.sh ui       (or: uv run streamlit run ui/app.py)"
 echo "  Run tests: uv run pytest tests/"
-echo "  Docs: http://localhost:8000/docs"
+echo "  API docs:  http://localhost:8000/docs"

@@ -37,7 +37,13 @@ class DocumentProcessor:
         try:
             if suffix == ".pdf":
                 if self._pdf_processor is not None:
-                    return self._pdf_processor.extract(path)
+                    result = self._pdf_processor.extract(path)
+                    # If OCR path failed (e.g. Tesseract not installed), try PyPDF for native text
+                    if not (result.text or "").strip():
+                        fallback = self._extract_pdf(path)
+                        if (fallback.text or "").strip():
+                            return fallback
+                    return result
                 return self._extract_pdf(path)
             if suffix in (".doc", ".docx"):
                 return self._extract_docx(path)

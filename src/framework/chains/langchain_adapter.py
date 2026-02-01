@@ -2,6 +2,7 @@
 
 from typing import Any, List, Optional
 
+from pydantic import ConfigDict
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
@@ -31,8 +32,7 @@ class LangChainLLMAdapter(BaseChatModel):
 
     llm_client: Any  # LLMClient
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @property
     def _llm_type(self) -> str:

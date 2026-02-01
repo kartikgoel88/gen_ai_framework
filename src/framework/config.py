@@ -2,7 +2,7 @@
 
 from functools import lru_cache
 from typing import Optional
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class FrameworkSettings(BaseSettings):
@@ -81,9 +81,7 @@ class FrameworkSettings(BaseSettings):
     PGVECTOR_CONNECTION_STRING: Optional[str] = None
     PGVECTOR_TABLE: str = "rag_embeddings"
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 
 
 @lru_cache

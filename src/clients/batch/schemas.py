@@ -2,7 +2,7 @@
 
 from typing import Any, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 # --- Employee context (optional; enriches bills and drives validations) ---
@@ -28,8 +28,7 @@ class BillExtracted(BaseModel):
     raw: Optional[str] = None
     error: Optional[str] = None
 
-    class Config:
-        extra = "allow"  # Allow LLM to return extra fields
+    model_config = ConfigDict(extra="allow")  # Allow LLM to return extra fields
 
 
 # --- Policy decision (LLM output) ---
