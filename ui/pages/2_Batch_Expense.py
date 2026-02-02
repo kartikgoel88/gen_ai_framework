@@ -91,6 +91,7 @@ if run_single and files:
             for r in results:
                 with st.expander(f"{r.get('file_name', '?')} — {r.get('decision', '?')}"):
                     st.json(r)
+                    st.code(json.dumps(r, indent=2, default=str), language="json")
     except Exception as e:
         st.exception(e)
 
@@ -117,5 +118,6 @@ if mode == "ZIP of folders" and run_folders and zip_file:
             for f in out.get("folders", []):
                 with st.expander(f["folder_name"]):
                     st.json(f)
+                    st.code(json.dumps(f, indent=2, default=str), language="json")
     except Exception as e:
         st.exception(e)

@@ -56,6 +56,7 @@ gen_ai_framework/
 | **documents**    | DocumentProcessor (PDF/DOCX/Excel/TXT), LangChain loaders. |
 | **ocr**          | EasyOCR for images. |
 | **docling**      | Layout-aware parsing, OCR for scanned PDFs. |
+| **confluence**   | ConfluenceClient: fetch pages by space or ID, HTML→text, ingest into RAG. |
 | **mcp**          | MCPClientBridge: stdio server, list/call tools. |
 | **observability**| `TracingLLMClient`, `EvalHarness`, `EvalResult`. |
 | **prompts**      | `PromptStore` (versioned files), `TemplateRunner`, `ABTestRunner`. |
@@ -96,6 +97,7 @@ pip install -e ".[dev]"
 Optional extras:
 
 - **Celery (task queue):** `pip install -e ".[celery]"` and set `CELERY_BROKER_URL`, `CELERY_RESULT_BACKEND` (e.g. Redis).
+- **Confluence:** `pip install -e ".[confluence]"` and set `CONFLUENCE_BASE_URL`, then Cloud: `CONFLUENCE_EMAIL` + `CONFLUENCE_API_TOKEN`, or Server: `CONFLUENCE_USER` + `CONFLUENCE_PASSWORD`. Use `POST /tasks/rag/ingest/confluence` to ingest pages into RAG.
 - **Vector stores:** `pip install -e ".[vectorstore-pinecone]"` (or weaviate, qdrant, pgvector) and set `VECTOR_STORE` + backend env vars.
 
 ## Run
@@ -136,6 +138,9 @@ celery -A src.framework.queue.app:get_celery_app worker -l info
 
 - **RAG ingest**  
   `POST /tasks/rag/ingest` — Body: `{"text": "...", "metadata": {}}`
+
+- **RAG ingest from Confluence**  
+  `POST /tasks/rag/ingest/confluence` — Body: `{"space_key": "DEMO"}` or `{"page_ids": ["123", "456"]}`, optional `limit` (default 100). Set `CONFLUENCE_BASE_URL` and auth (Cloud: `CONFLUENCE_EMAIL` + `CONFLUENCE_API_TOKEN`; Server: `CONFLUENCE_USER` + `CONFLUENCE_PASSWORD`). Optional: `pip install -e ".[confluence]"` for better HTML-to-text.
 
 - **RAG query**  
   `POST /tasks/rag/query` — Body: `{"question": "...", "top_k": 4}`

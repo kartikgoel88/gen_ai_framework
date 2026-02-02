@@ -3,7 +3,7 @@
 import json
 from typing import Optional, Any, List
 
-from fastapi import APIRouter, Depends, UploadFile, File
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -15,9 +15,11 @@ from src.framework.api.deps import (
     get_langchain_loader,
     get_ocr_processor,
     get_docling_processor,
+    get_confluence_client,
     get_mcp_client,
     get_embeddings,
 )
+from src.framework.confluence.client import ConfluenceClient
 from src.framework.llm.base import LLMClient
 from src.framework.rag.base import RAGClient
 from src.framework.chains import (
@@ -147,6 +149,44 @@ def rag_ingest(
     """Ingest raw text into the RAG store."""
     rag.add_documents([body.text], metadatas=[body.metadata] if body.metadata else None)
     return {"ok": True}
+
+
+class ConfluenceIngestRequest(BaseModel):
+    """Ingest Confluence pages into RAG. Provide space_key and/or page_ids."""
+
+    space_key: Optional[str] = None
+    page_ids: Optional[List[str]] = None
+    limit: int = 100
+
+
+@router.post("/rag/ingest/confluence")
+def rag_ingest_confluence(
+    body: ConfluenceIngestRequest,
+    rag: RAGClient = Depends(get_rag),
+    confluence: ConfluenceClient | None = Depends(get_confluence_client),
+):
+    """Ingest Confluence pages into the RAG store. Set CONFLUENCE_BASE_URL (and auth) in .env."""
+    if confluence is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Confluence is not configured. Set CONFLUENCE_BASE_URL and CONFLUENCE_EMAIL/CONFLUENCE_API_TOKEN (Cloud) or CONFLUENCE_USER/CONFLUENCE_PASSWORD (Server).",
+        )
+    if not body.space_key and not body.page_ids:
+        raise HTTPException(
+            status_code=400,
+            detail="Provide space_key and/or page_ids.",
+        )
+    pages = confluence.fetch_pages_for_ingest(
+        space_key=body.space_key,
+        page_ids=body.page_ids,
+        limit=body.limit,
+    )
+    if not pages:
+        return {"ok": True, "ingested": 0, "message": "No pages found or no content extracted."}
+    texts = [p[0] for p in pages]
+    metadatas = [p[1] for p in pages]
+    rag.add_documents(texts, metadatas=metadatas)
+    return {"ok": True, "ingested": len(texts)}
 
 
 @router.post("/rag/query")

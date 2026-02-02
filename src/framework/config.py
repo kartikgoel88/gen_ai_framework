@@ -81,6 +81,13 @@ class FrameworkSettings(BaseSettings):
     PGVECTOR_CONNECTION_STRING: Optional[str] = None
     PGVECTOR_TABLE: str = "rag_embeddings"
 
+    # Confluence (optional): ingest pages into RAG
+    CONFLUENCE_BASE_URL: Optional[str] = None  # e.g. https://your-site.atlassian.net/wiki
+    CONFLUENCE_EMAIL: Optional[str] = None  # Cloud: email for API token auth
+    CONFLUENCE_API_TOKEN: Optional[str] = None  # Cloud: API token
+    CONFLUENCE_USER: Optional[str] = None  # Server/DC: username for basic auth
+    CONFLUENCE_PASSWORD: Optional[str] = None  # Server/DC: password
+
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 
 

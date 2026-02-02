@@ -22,6 +22,7 @@ from ..documents.pdf_ocr_processor import PdfOcrProcessor
 from ..documents.langchain_loader import LangChainDocProcessor
 from ..ocr.processor import OcrProcessor
 from ..docling.processor import DoclingProcessor
+from ..confluence.client import ConfluenceClient
 from ..mcp.client import MCPClientBridge
 from ..agents.base import AgentBase
 from ..agents.langchain_agent import LangChainReActAgent
@@ -271,6 +272,26 @@ def get_rag_chain(
 def get_docling_processor() -> DoclingProcessor:
     """Dependency that returns the Docling processor."""
     return DoclingProcessor()
+
+
+def get_confluence_client(
+    settings: Annotated[FrameworkSettings, Depends(get_settings_dep)],
+) -> ConfluenceClient | None:
+    """Dependency that returns the Confluence client when CONFLUENCE_BASE_URL is set; otherwise None."""
+    base_url = getattr(settings, "CONFLUENCE_BASE_URL", None) or ""
+    if not base_url.strip():
+        return None
+    email = getattr(settings, "CONFLUENCE_EMAIL", None)
+    api_token = getattr(settings, "CONFLUENCE_API_TOKEN", None)
+    username = getattr(settings, "CONFLUENCE_USER", None)
+    password = getattr(settings, "CONFLUENCE_PASSWORD", None)
+    return ConfluenceClient(
+        base_url=base_url,
+        email=email,
+        api_token=api_token,
+        username=username,
+        password=password,
+    )
 
 
 def get_mcp_client(
