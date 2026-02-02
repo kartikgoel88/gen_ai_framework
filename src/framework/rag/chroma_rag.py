@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import Any, Optional
 
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 
 from ..embeddings.base import EmbeddingsProvider
 from .base import RAGClient
@@ -93,7 +93,7 @@ class ChromaRAG(RAGClient):
             start_idx = len(self._bm25_texts)
         if chunks:
             self._store.add_texts(texts=chunks, metadatas=meta_list)
-            self._store.persist()
+            # Note: Chroma 0.4.x+ automatically persists, no need to call persist()
             self._bm25_index = None  # invalidate so next retrieve rebuilds
 
     def retrieve(self, query: str, top_k: int = 4, **kwargs: Any) -> list[dict[str, Any]]:

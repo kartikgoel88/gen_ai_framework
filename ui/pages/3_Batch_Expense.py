@@ -7,10 +7,20 @@ from pathlib import Path
 import streamlit as st
 
 from ui.services import get_batch_service, get_doc_processor, save_uploaded_file
+from ui.components import parse_json_input
 
 
-st.header("Batch Expense")
-st.caption("Process cab/meals bills against admin policy. Uses framework LLM + document processor.")
+st.header("💼 Batch Expense Processing")
+st.markdown("""
+**Complete Application Example**: Process expense bills against company policy
+
+This is a complete, production-ready application that demonstrates:
+- Document processing and extraction
+- LLM-based analysis and decision making
+- Batch processing workflows
+- Structured data extraction
+- Policy compliance checking
+""")
 
 policy_source = st.radio("Policy source", ["Paste text", "Upload file"], horizontal=True)
 if "policy_text" not in st.session_state:
@@ -28,12 +38,14 @@ else:
             try:
                 doc = get_doc_processor()
                 result = doc.extract(path)
-                extracted = (result.text or "").strip()
-                st.session_state["policy_text"] = result.text or ""
-                if extracted:
+                policy_from_file = result.text or ""
+                st.session_state["policy_text"] = policy_from_file
+                st.session_state["policy_edit"] = policy_from_file  # sync so "Extracted policy" text area shows it
+                if result.text:
                     st.success("Policy extracted. Now upload bill files below and click **Process bills** to see approval/rejection results.")
+                    st.caption("If the PDF is image-only (scanned), ensure Tesseract is installed (e.g. `brew install tesseract` on macOS). You can also paste policy text above.")
                 else:
-                    reason = result.error or "Unknown reason."
+                    reason = getattr(result, "error", "Unknown reason.")
                     st.warning(f"No text could be extracted from this file. **Reason:** {reason}")
                     st.caption("If the PDF is image-only (scanned), ensure Tesseract is installed (e.g. `brew install tesseract` on macOS). You can also paste policy text above.")
             except Exception as e:
@@ -47,6 +59,39 @@ policy_text = (st.session_state.get("policy_text") or "").strip()
 if policy_text:
     st.caption("Policy is set. Upload bill files (or a ZIP of folders) below and click **Process bills** / **Process folders** to see approval/rejection results.")
 
+# Structured policy (parsed): section, category, amount_valid, additional_conditions
+if policy_text:
+    st.subheader("Structured policy (extracted)")
+    parse_policy = st.button("Parse policy to structure", key="parse_policy_btn")
+    if parse_policy:
+        with st.spinner("Parsing policy with LLM…"):
+            try:
+                svc = get_batch_service()
+                structured = svc.parse_policy_to_json(policy_text)
+                st.session_state["policy_structured"] = structured
+            except Exception as e:
+                st.error(f"Parse failed: {e}")
+                st.session_state["policy_structured"] = None
+    if st.session_state.get("policy_structured"):
+        structured = st.session_state["policy_structured"]
+        sections = structured.get("sections") or []
+        if sections:
+            rows = []
+            for s in sections:
+                rows.append({
+                    "Section": s.get("section") or "—",
+                    "Category": s.get("category") or "—",
+                    "Amount valid": s.get("amount_valid") if s.get("amount_valid") is not None else None,
+                    "Additional conditions": ", ".join(s.get("additional_conditions") or []) or "—",
+                })
+            st.dataframe(rows, use_container_width=True, hide_index=True)
+            with st.expander("Raw structured JSON"):
+                st.json(structured)
+        else:
+            st.info("No sections extracted. Try rephrasing the policy or click **Parse policy to structure** again.")
+    elif st.session_state.get("policy_structured") is not None and not (st.session_state["policy_structured"].get("sections")):
+        st.info("No sections extracted. Try rephrasing the policy or click **Parse policy to structure** again.")
+
 mode = st.radio("Input mode", ["Single files", "ZIP of folders"], horizontal=True)
 
 if mode == "Single files":
@@ -59,14 +104,11 @@ else:
     run_single = False
 
 client_addresses_raw = st.text_input("Client addresses (optional JSON)", placeholder='{"TESCO": ["addr1"], "AMEX": ["addr2"]}', key="client_addrs")
-client_addresses = {}
-if client_addresses_raw and client_addresses_raw.strip():
-    try:
-        client_addresses = json.loads(client_addresses_raw)
-        if not isinstance(client_addresses, dict):
-            client_addresses = {}
-    except Exception:
-        st.warning("Invalid JSON for client addresses; ignoring.")
+client_addresses, json_error = parse_json_input(client_addresses_raw, default={})
+if json_error:
+    st.warning(f"Invalid JSON for client addresses; ignoring. {json_error}")
+if not isinstance(client_addresses, dict):
+    client_addresses = {}
 
 if run_single and files:
     if not policy_text:

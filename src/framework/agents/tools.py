@@ -1,4 +1,4 @@
-"""LangChain tools built from framework components (RAG, MCP)."""
+"""LangChain tools built from framework components (RAG, MCP, Web Search)."""
 
 from typing import Any, Optional
 
@@ -59,14 +59,68 @@ def build_mcp_tools(mcp_client: Any) -> list[BaseTool]:
     return result
 
 
+def build_web_search_tool() -> BaseTool:
+    """Build a LangChain tool for web search (supports LinkedIn profile search)."""
+    
+    class WebSearchInput(BaseModel):
+        query: str = Field(description="Search query. For LinkedIn profiles, use format: 'linkedin profile [name]' or 'site:linkedin.com [name]'")
+        max_results: int = Field(default=5, description="Maximum number of search results to return")
+    
+    class WebSearchTool(BaseTool):
+        name: str = "web_search"
+        description: str = (
+            "Search the web for information. Use this to find LinkedIn profiles, current information, "
+            "or any web content. For LinkedIn profiles, use queries like 'linkedin profile John Doe' "
+            "or 'site:linkedin.com/in/ John Doe'. Returns search results with titles, URLs, and snippets."
+        )
+        args_schema: type[BaseModel] = WebSearchInput
+        
+        def _run(self, query: str, max_results: int = 5) -> str:
+            try:
+                from duckduckgo_search import DDGS
+                
+                # For LinkedIn profiles, optimize the query
+                if "linkedin" in query.lower() or "linkedin profile" in query.lower():
+                    # Ensure we're searching LinkedIn specifically
+                    if "site:linkedin.com" not in query.lower():
+                        query = f"site:linkedin.com/in/ {query.replace('linkedin profile', '').replace('linkedin', '').strip()}"
+                
+                with DDGS() as ddgs:
+                    results = list(ddgs.text(query, max_results=max_results))
+                
+                if not results:
+                    return f"No search results found for: {query}"
+                
+                formatted_results = []
+                for i, result in enumerate(results, 1):
+                    title = result.get("title", "No title")
+                    url = result.get("href", "No URL")
+                    body = result.get("body", "No description")
+                    formatted_results.append(f"{i}. **{title}**\n   URL: {url}\n   {body}\n")
+                
+                return "\n".join(formatted_results)
+            except ImportError:
+                return (
+                    "Web search is not available. Install duckduckgo-search: "
+                    "pip install duckduckgo-search"
+                )
+            except Exception as e:
+                return f"Error during web search: {str(e)}"
+    
+    return WebSearchTool()
+
+
 def build_framework_tools(
     rag_client: Optional[Any] = None,
     mcp_client: Optional[Any] = None,
+    enable_web_search: bool = True,
 ) -> list[BaseTool]:
-    """Build all framework tools for the agent (RAG + MCP)."""
+    """Build all framework tools for the agent (RAG + MCP + Web Search)."""
     tools: list[BaseTool] = []
     if rag_client is not None:
         tools.append(build_rag_tool(rag_client))
+    if enable_web_search:
+        tools.append(build_web_search_tool())
     if mcp_client is not None:
         tools.extend(build_mcp_tools(mcp_client))
     return tools

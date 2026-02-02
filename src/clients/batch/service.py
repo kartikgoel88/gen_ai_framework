@@ -9,7 +9,7 @@ from src.framework.documents.processor import DocumentProcessor
 from src.framework.ocr.processor import OcrProcessor
 
 from . import validations as val
-from .schemas import EmployeeContext
+from .schemas import EmployeeContext, PolicySection
 
 # Bill type constants
 BILL_TYPE_CAB = "cab"
@@ -141,20 +141,39 @@ class BatchExpenseService:
     # policy chunks; for now we pass the full parsed JSON with the decision.
     # -------------------------------------------------------------------------
     def parse_policy_to_json(self, policy_text: str) -> dict[str, Any]:
-        """Parse policy text to structured JSON via LLM. Pass with decision prompt, not RAG."""
+        """Parse policy text to structured JSON via LLM (section, category, amount_valid, additional_conditions). Pass with decision prompt, not RAG."""
         if not (policy_text or "").strip():
             return {}
-        prompt = """Parse the following expense policy text into a structured JSON object.
-Include keys such as: meal_allowance (e.g. {"limit": number}), client_location_allowance (e.g. {"limit": number}),
-fuel_reimbursement_two_wheeler, fuel_reimbursement_four_wheeler (e.g. {"max_per_month": number}).
-Use null for missing values. Return only valid JSON, no markdown.
+        prompt = """Parse the following expense policy text into a structured JSON object with a "sections" array.
+Each section must have:
+- "section": string (policy heading, e.g. "Client Location Allowance", "Meal Allowance")
+- "category": string (expense category: cab, meals, client_location, fuel_two_wheeler, fuel_four_wheeler, or similar)
+- "amount_valid": number or null (max/valid amount in currency units, e.g. 6000, 125; null if not specified)
+- "additional_conditions": array of strings or null (other conditions, e.g. "Submit bills by 30th", "Receipts required", "Pro-rata by days")
+
+Extract every distinct policy rule (meal limits, cab/travel limits, fuel per km, client allowance, submission rules) as separate sections.
+Use null for missing fields. Return only valid JSON with a single root object containing "sections". No markdown.
 
 Policy text:
 """
         prompt += (policy_text or "")[:4000]
         try:
             out = self._llm.invoke_structured(prompt)
-            return out if isinstance(out, dict) else {}
+            if not isinstance(out, dict):
+                return {}
+            sections = out.get("sections")
+            if not isinstance(sections, list):
+                return out
+            # Validate and normalize to PolicySection schema (section, category, amount_valid, additional_conditions)
+            validated = []
+            for s in sections:
+                if not isinstance(s, dict):
+                    continue
+                try:
+                    validated.append(PolicySection.model_validate(s).model_dump())
+                except Exception:
+                    validated.append({k: v for k, v in s.items() if k in ("section", "category", "amount_valid", "additional_conditions")})
+            return {"sections": validated}
         except Exception:
             return {}
 

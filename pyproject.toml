@@ -14,6 +14,7 @@ dependencies = [
     "langchain-text-splitters>=0.2.0",
     "langchain-openai>=0.0.2",
     "langchain-community>=0.0.10",
+    "langchain-chroma>=0.1.0",
     "langchain-google-genai>=2.0.0",
     "openai>=1.6.0",
     "chromadb>=0.4.18",
@@ -42,6 +43,8 @@ dependencies = [
     "sentence-transformers>=2.2.0",
     # RAG: hybrid search (BM25)
     "rank_bm25>=0.2.2",
+    # Web search for agents
+    "duckduckgo-search>=6.0.0",
     # Task queue (optional: install with pip install gen-ai-framework[celery])
     # LangGraph
     "langgraph>=0.2.0",
@@ -61,6 +64,9 @@ dev = ["pytest>=7.4.3", "pytest-asyncio>=0.21.1", "black>=23.11.0", "ruff>=0.1.6
 
 [project.scripts]
 batch-run = "src.clients.batch.runner:main"
+rag-cli = "src.clients.cli.rag_cli:main"
+agent-cli = "src.clients.cli.agent_cli:main"
+chain-cli = "src.clients.cli.chain_cli:main"
 
 [build-system]
 requires = ["hatchling"]

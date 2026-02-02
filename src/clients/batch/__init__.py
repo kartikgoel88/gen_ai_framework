@@ -4,6 +4,8 @@ from .router import router
 from .schemas import (
     BillExtracted,
     PolicyDecision,
+    PolicySection,
+    ParsedPolicy,
     ProcessResultItem,
     BatchSummary,
     BatchProcessResponse,
@@ -14,6 +16,8 @@ __all__ = [
     "router",
     "BillExtracted",
     "PolicyDecision",
+    "PolicySection",
+    "ParsedPolicy",
     "ProcessResultItem",
     "BatchSummary",
     "BatchProcessResponse",

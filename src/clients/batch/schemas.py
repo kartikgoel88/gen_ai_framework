@@ -31,6 +31,24 @@ class BillExtracted(BaseModel):
     model_config = ConfigDict(extra="allow")  # Allow LLM to return extra fields
 
 
+# --- Parsed policy section (LLM output from policy text) ---
+class PolicySection(BaseModel):
+    """One policy rule/section: section name, category, amount limit, and conditions."""
+
+    section: str = Field(..., description="Policy section or heading (e.g. Client Location Allowance, Meal Allowance)")
+    category: str = Field(..., description="Expense category (e.g. cab, meals, client_location, fuel_two_wheeler, fuel_four_wheeler)")
+    amount_valid: Optional[Any] = Field(None, description="Valid amount limit (number, e.g. 6000 or 125) or null if not specified")
+    additional_conditions: Optional[list[str]] = Field(None, description="Other conditions (e.g. submit by 30th, receipts required)")
+
+    model_config = ConfigDict(extra="allow")
+
+
+class ParsedPolicy(BaseModel):
+    """Structured policy parsed from text: list of sections with section, category, amount_valid, additional_conditions."""
+
+    sections: list[PolicySection] = Field(default_factory=list, description="Policy rules/sections")
+
+
 # --- Policy decision (LLM output) ---
 class PolicyDecision(BaseModel):
     """Approve/reject decision and reason."""

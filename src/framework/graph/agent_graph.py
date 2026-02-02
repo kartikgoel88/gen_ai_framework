@@ -28,7 +28,7 @@ def build_agent_graph(
             create_react_agent = None
     if create_react_agent is None:
         raise ImportError("LangGraph create_react_agent not found. Install langgraph.")
-    tools = build_framework_tools(rag_client=rag, mcp_client=mcp_client or _dummy_mcp())
+    tools = build_framework_tools(rag_client=rag, mcp_client=mcp_client or _dummy_mcp(), enable_web_search=True)
     system_prompt = system_prompt or (
         "You are a helpful AI assistant. Use the available tools when needed to answer questions. Be concise and accurate."
     )

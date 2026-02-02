@@ -1,16 +1,16 @@
-"""LangChain-based agent (LangGraph ReAct agent with tools)."""
+"""LangChain-based agent (ReAct agent with tools using LangChain's create_agent)."""
 
 from typing import Any, Optional
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.tools import BaseTool
-from langgraph.prebuilt import create_react_agent
+from langchain.agents import create_agent
 
 from .base import AgentBase
 
 
 class LangChainReActAgent(AgentBase):
-    """Agent using LangGraph create_react_agent (ReAct-style tool-calling loop)."""
+    """Agent using LangChain create_agent (ReAct-style tool-calling loop)."""
 
     def __init__(
         self,
@@ -26,7 +26,7 @@ class LangChainReActAgent(AgentBase):
             "Be concise and accurate."
         )
         self._verbose = verbose
-        self._graph = create_react_agent(
+        self._graph = create_agent(
             model=self._llm,
             tools=self._tools,
             prompt=self._system_prompt,

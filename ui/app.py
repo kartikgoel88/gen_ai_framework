@@ -17,6 +17,11 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-st.title("Gen AI Framework")
-st.markdown("Use the **sidebar** to open: **Batch Expense**, **Agents**, **Prompts**, **Graph/RAG**.")
-st.info("This UI is a separate app that uses `src.clients` and `src.framework` as libraries.")
+st.title("🤖 Gen AI Framework")
+st.markdown("""
+Welcome! Navigate using the sidebar:
+- **Home**: Feature overview and quick start
+- **Gen AI Learning**: End-to-end flows and interactive tutorials
+- **Batch Expense**: Complete application example (bills reimbursement)
+""")
+st.info("💡 **New to the framework?** Start with **Home** to see all features, then explore **Gen AI Learning** for complete workflows.")

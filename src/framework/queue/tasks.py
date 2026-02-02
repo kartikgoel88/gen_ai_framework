@@ -69,7 +69,7 @@ def agent_run_task(self, message: str, system_prompt: Optional[str] = None) -> d
     s = get_settings()
     rag = get_rag(s)
     mcp = get_mcp_client(s)
-    tools = build_framework_tools(rag_client=rag, mcp_client=mcp)
+                        tools = build_framework_tools(rag_client=rag, mcp_client=mcp, enable_web_search=True)
     llm = ChatOpenAI(model=s.LLM_MODEL, temperature=s.TEMPERATURE, openai_api_key=s.OPENAI_API_KEY)
     agent = LangChainReActAgent(llm=llm, tools=tools, system_prompt=system_prompt, verbose=False)
     output = agent.invoke(message, system_prompt=system_prompt)
