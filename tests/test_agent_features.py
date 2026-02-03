@@ -12,7 +12,7 @@ from src.framework.agents.monitoring import AgentMonitor, MonitoredAgent, EventT
 from src.framework.agents.cost_tracking import CostTracker, CostTrackingAgent, BudgetExceededError
 from src.framework.agents.personas import PersonaAgent, PersonaType, create_persona_agent
 from src.framework.agents.error_recovery import ErrorRecoveryAgent, RetryConfig, ErrorType
-from src.framework.agents.evaluation import AgentEvaluator, EvaluationTask, ExactMatchMetric
+from src.framework.agents.evaluation import AgentEvaluator, EvaluationTask, EvaluationResult, ExactMatchMetric
 
 
 class MockAgent(AgentBase):
@@ -34,16 +34,22 @@ class MockAgent(AgentBase):
 
 class MockRAG:
     """Mock RAG client for testing."""
-    
+
     def __init__(self):
-        self.documents = []
-    
+        self.documents = []  # list of (text, metadata)
+
     def add_documents(self, texts, metadatas=None):
-        self.documents.extend(zip(texts, metadatas or [{}] * len(texts)))
-    
+        metadatas = metadatas if metadatas is not None else [{}] * len(texts)
+        for t, m in zip(texts, metadatas):
+            self.documents.append((t, m))
+
     def retrieve(self, query, top_k=4):
-        return [{"content": f"Retrieved: {query}", "metadata": {}}]
-    
+        # Return stored docs in RAGMemoryStore format: content + metadata with user_id
+        out = []
+        for text, meta in reversed(self.documents[-top_k:]):
+            out.append({"content": text, "metadata": meta})
+        return out[:top_k]
+
     def clear(self):
         self.documents.clear()
 
@@ -196,23 +202,18 @@ def test_cost_tracking_agent(mock_agent):
 def test_budget_exceeded_error(mock_agent):
     """Test budget exceeded error."""
     tracker = CostTracker()
-    tracker.set_budget("agent1", budget=0.0001)  # Very small budget
-    
+    # Budget smaller than one invoke (one invoke costs ~0.0002 for short msg)
+    tracker.set_budget("agent1", budget=1e-6)
+
     cost_agent = CostTrackingAgent(
         base_agent=mock_agent,
         cost_tracker=tracker,
         agent_id="agent1",
         model="gpt-4"
     )
-    
-    # First call should work
-    cost_agent.invoke("Test")
-    
-    # Set budget to very low and try again
-    tracker.set_budget("agent1", budget=0.0)
-    
-    # Should raise error if cost exceeds budget
-    # (This depends on implementation - may need adjustment)
+
+    with pytest.raises(BudgetExceededError):
+        cost_agent.invoke("Test")
 
 
 def test_persona_agent(mock_agent):
@@ -259,22 +260,23 @@ def test_agent_evaluator(mock_agent):
 def test_exact_match_metric():
     """Test exact match metric."""
     metric = ExactMatchMetric()
-    
+
     task = EvaluationTask(
         task_id="task1",
         prompt="Test",
         expected_output="Expected"
     )
-    
-    result = EvaluationTask(
+
+    result_match = EvaluationResult(
         task_id="task1",
-        prompt="Test",
         actual_output="Expected"
     )
-    
-    score = metric.compute(task, result)
+    score = metric.compute(task, result_match)
     assert score == 1.0
-    
-    result.actual_output = "Different"
-    score = metric.compute(task, result)
+
+    result_mismatch = EvaluationResult(
+        task_id="task1",
+        actual_output="Different"
+    )
+    score = metric.compute(task, result_mismatch)
     assert score == 0.0

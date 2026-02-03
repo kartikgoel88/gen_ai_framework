@@ -1,6 +1,6 @@
 """Agent reflection and self-correction capabilities."""
 
-from typing import Any, Optional, Dict
+from typing import Any, Dict, List, Optional
 from dataclasses import dataclass
 from enum import Enum
 

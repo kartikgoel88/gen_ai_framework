@@ -8,7 +8,6 @@ from typing import Any, Iterator, Optional
 from enum import Enum
 from dataclasses import dataclass
 
-from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, AIMessage
 from langchain_core.tools import BaseTool
 
 from .base import AgentBase
@@ -122,65 +121,53 @@ class StreamingAgent(AgentBase):
                 content="Analyzing the question and determining the best approach..."
             )
             
-            # Build messages
-            messages: list[BaseMessage] = []
-            if system_prompt:
-                messages.append(SystemMessage(content=system_prompt))
-            elif self._base_agent._system_prompt:
-                messages.append(SystemMessage(content=self._base_agent._system_prompt))
-            
+            # Build input text (same format as LangChainReActAgent.invoke)
+            prompt_used = system_prompt or self._base_agent._system_prompt or ""
             if chat_history:
-                for msg in chat_history:
-                    if isinstance(msg, BaseMessage):
-                        messages.append(msg)
-                    elif isinstance(msg, dict):
-                        role = msg.get("role", "user")
-                        content = msg.get("content", "")
-                        if role == "user":
-                            messages.append(HumanMessage(content=content))
-                        elif role == "assistant":
-                            messages.append(AIMessage(content=content))
-            
-            messages.append(HumanMessage(content=message))
-            
-            # Stream the graph execution
-            inputs = {"messages": messages}
-            
-            # Use LangGraph's stream functionality if available
-            try:
-                # Stream intermediate steps
-                for chunk in self._base_agent._graph.stream(inputs, **kwargs):
-                    # Process chunk to extract events
-                    for event in self._process_chunk(chunk):
-                        yield event
-            except AttributeError:
-                # Fallback: invoke and stream final response
+                history_str = self._base_agent._format_chat_history(chat_history)
+                input_text = f"{prompt_used}\n\nChat history:\n{history_str}\n\nQuestion: {message}" if prompt_used else f"Chat history:\n{history_str}\n\nQuestion: {message}"
+            else:
+                input_text = f"{prompt_used}\n\nQuestion: {message}" if prompt_used else message
+
+            # AgentExecutor doesn't stream; use invoke with return_intermediate_steps
+            result = self._base_agent._executor.invoke(
+                {"input": input_text},
+                return_intermediate_steps=True,
+                **kwargs,
+            )
+            intermediate_steps = result.get("intermediate_steps", [])
+            for action, observation in intermediate_steps:
+                tool_name = getattr(action, "tool", action) if hasattr(action, "tool") else str(action)
+                tool_input = getattr(action, "tool_input", {}) if hasattr(action, "tool_input") else {}
                 yield AgentEvent(
-                    type=AgentEventType.REASONING,
-                    content="Processing request..."
+                    type=AgentEventType.TOOL_SELECTION,
+                    content=f"Selected tool: {tool_name}",
+                    metadata={"tool_name": tool_name},
                 )
-                result = self._base_agent._graph.invoke(inputs, **kwargs)
-                
-                # Extract final response
-                out_messages = result.get("messages", [])
-                if out_messages:
-                    last = out_messages[-1]
-                    if hasattr(last, "content") and last.content:
-                        content = last.content if isinstance(last.content, str) else str(last.content)
-                        # Stream response in chunks
-                        chunk_size = 50
-                        for i in range(0, len(content), chunk_size):
-                            yield AgentEvent(
-                                type=AgentEventType.RESPONSE_CHUNK,
-                                content=content[i:i + chunk_size]
-                            )
-            
-            # Emit completion event
+                yield AgentEvent(
+                    type=AgentEventType.TOOL_CALL,
+                    content=f"Calling {tool_name} with args: {tool_input}",
+                    metadata={"tool_call": {"name": tool_name, "args": tool_input}},
+                )
+                obs_str = str(observation)[:500] + "..." if len(str(observation)) > 500 else str(observation)
+                yield AgentEvent(
+                    type=AgentEventType.TOOL_RESULT,
+                    content=obs_str,
+                    metadata={"full_content": str(observation)},
+                )
+            output = result.get("output", "")
+            if output:
+                chunk_size = 50
+                for i in range(0, len(output), chunk_size):
+                    yield AgentEvent(
+                        type=AgentEventType.RESPONSE_CHUNK,
+                        content=output[i : i + chunk_size],
+                    )
             yield AgentEvent(
                 type=AgentEventType.COMPLETE,
-                content="Agent execution completed"
+                content="Agent execution completed",
             )
-            
+
         except Exception as e:
             yield AgentEvent(
                 type=AgentEventType.ERROR,

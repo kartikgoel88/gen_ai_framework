@@ -7,6 +7,8 @@ from dataclasses import dataclass, asdict
 
 from ..rag.base import RAGClient
 
+from .base import AgentBase
+
 
 @dataclass
 class ConversationMemory:
