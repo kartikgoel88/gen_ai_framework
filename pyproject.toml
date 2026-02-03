@@ -66,6 +66,7 @@ dev = ["pytest>=7.4.3", "pytest-asyncio>=0.21.1", "black>=23.11.0", "ruff>=0.1.6
 batch-run = "src.clients.batch.runner:main"
 rag-cli = "src.clients.cli.rag_cli:main"
 agent-cli = "src.clients.cli.agent_cli:main"
+rag-agent-cli = "src.clients.cli.rag_agent_cli:main"
 chain-cli = "src.clients.cli.chain_cli:main"
 
 [build-system]

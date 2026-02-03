@@ -16,7 +16,7 @@ This module provides:
 """
 
 from .base import AgentBase
-from .langchain_agent import LangChainReActAgent
+from .langchain_agent import LangChainReActAgent, create_tool_agent
 from .streaming_agent import StreamingAgent, AgentEvent, AgentEventType
 from .memory import MemoryStore, RAGMemoryStore, AgentWithMemory, ConversationMemory
 from .multi_agent import (
@@ -55,6 +55,7 @@ __all__ = [
     # Base
     "AgentBase",
     "LangChainReActAgent",
+    "create_tool_agent",
     # Streaming
     "StreamingAgent",
     "AgentEvent",

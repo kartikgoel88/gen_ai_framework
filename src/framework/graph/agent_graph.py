@@ -35,16 +35,12 @@ def build_agent_graph(
         enable_web_search=True
     )
     
-    system_prompt = system_prompt or (
-        "You are a helpful AI assistant. Use the available tools when needed to answer questions. Be concise and accurate."
-    )
-    
+    # Note: system_prompt should be included in messages when invoking the graph
     # Create agent graph using LangChain's create_agent
     # This returns a LangGraph graph that can be invoked with {"messages": [...]}
     graph = create_agent(
         model=llm,
         tools=tools,
-        prompt=system_prompt,
     )
     
     return graph

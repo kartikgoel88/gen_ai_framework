@@ -8,7 +8,7 @@ from langchain_core.output_parsers import StrOutputParser
 from ..llm.base import LLMClient
 from ..rag.base import RAGClient
 
-from .langchain_adapter import LangChainLLMAdapter
+from ..adapters import LangChainLLMAdapter
 from .langchain_chain import LangChainChain
 from .rag_chain import DEFAULT_RAG_PROMPT
 

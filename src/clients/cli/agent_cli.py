@@ -1,4 +1,14 @@
-"""CLI tool for agent operations."""
+"""CLI tool for agent operations.
+
+This CLI uses FastAPI dependencies (get_agent) for consistency with the API.
+For standalone Python scripts, consider using create_tool_agent() instead:
+    from src.framework.agents import create_tool_agent
+    from src.framework.api.deps import get_llm, get_rag
+    
+    llm = get_llm(settings)
+    rag = get_rag(settings)
+    agent = create_tool_agent(llm=llm, rag_client=rag, enable_web_search=True)
+"""
 
 import argparse
 import json

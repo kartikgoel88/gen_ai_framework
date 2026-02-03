@@ -11,7 +11,7 @@ from fastapi import Depends
 from ..agents.base import AgentBase
 from ..agents.langchain_agent import LangChainReActAgent
 from ..agents.tools import build_framework_tools
-from ..chains.langchain_adapter import LangChainLLMAdapter
+from ..adapters import LangChainLLMAdapter
 from ..chains.rag_chain import RAGChain
 from ..llm.base import LLMClient
 from ..rag.base import RAGClient

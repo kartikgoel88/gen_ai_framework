@@ -10,6 +10,10 @@ from ..llm.base import LLMClient
 from ..rag.base import RAGClient
 
 
+# Type for (model_id, LLMClient) pairs used in multi-model eval
+ModelSpec = tuple[str, LLMClient]
+
+
 @dataclass
 class EvalDatasetItem:
     """Single eval example: question and expected reference(s)."""
@@ -164,3 +168,46 @@ class EvalHarness:
                     )
                 )
         return items
+
+
+def evaluate_multiple_models(
+    items: list[EvalDatasetItem],
+    models: list[ModelSpec],
+    *,
+    rag: Optional[RAGClient] = None,
+    prompt_template: Optional[str] = None,
+    top_k: int = 4,
+    progress_callback: Optional[Callable[[str, int, int], None]] = None,
+) -> dict[str, EvalResult]:
+    """Run the eval harness on the same dataset for multiple models.
+
+    Args:
+        items: Eval dataset (question, expected_answer or expected_keywords).
+        models: List of (model_id, LLMClient) to compare, e.g. [
+            ("gpt-4", llm_gpt4),
+            ("gpt-3.5", llm_gpt35),
+        ].
+        rag: Optional RAG client (same for all models).
+        prompt_template: Optional prompt template for RAG.
+        top_k: Retrieval top_k when using RAG.
+        progress_callback: Optional callback (model_id, current, total) per model.
+
+    Returns:
+        Dict mapping model_id -> EvalResult for each model.
+    """
+    results: dict[str, EvalResult] = {}
+    for model_id, llm in models:
+        harness = EvalHarness(
+            llm=llm,
+            rag=rag,
+            prompt_template=prompt_template,
+            top_k=top_k,
+        )
+        cb: Optional[Callable[[int, int], None]] = None
+        if progress_callback:
+            mid = model_id  # bind for closure
+            def _cb(current: int, total: int) -> None:
+                progress_callback(mid, current, total)
+            cb = _cb
+        results[model_id] = harness.run(items, progress_callback=cb)
+    return results
