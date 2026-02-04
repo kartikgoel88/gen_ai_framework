@@ -39,11 +39,70 @@ Demonstrates all chain types:
 - Summarization Chain
 - Classification Chain
 - Extraction Chain
+- Pipeline (Multi-step chains)
+- LangChain Integration
 
 **Usage:**
 ```bash
 export OPENAI_API_KEY="your-key"
 python examples/chains_example.py
+```
+
+#### pipeline_example.py
+Demonstrates multi-step chain composition:
+- Simple pipelines (Extract → Summarize)
+- Complex pipelines (Extract → Summarize → Classify)
+- RAG pipelines (Retrieve → Extract → Structure)
+- Conditional processing
+- Custom output keys
+
+**Usage:**
+```bash
+export OPENAI_API_KEY="your-key"
+python examples/pipeline_example.py
+```
+
+#### adapters_example.py
+Demonstrates LangChain adapter usage:
+- Basic adapter usage
+- Provider-specific adapters
+- Message serialization
+- Tool call parsing
+- Using adapters in LangChain chains
+- Streaming with adapters
+
+**Usage:**
+```bash
+export OPENAI_API_KEY="your-key"
+python examples/adapters_example.py
+```
+
+#### graph_example.py
+Demonstrates LangGraph workflows:
+- RAG Graph (Retrieve → Generate)
+- Agent Graph (ReAct with tools)
+- Streaming graph execution
+- State inspection
+- Multiple queries with state
+
+**Usage:**
+```bash
+export OPENAI_API_KEY="your-key"
+python examples/graph_example.py
+```
+
+#### agent_flow_example.py
+Demonstrates the complete agent flow:
+- Step-by-step flow visualization
+- Simple questions (no tools)
+- Questions requiring tools
+- Multi-turn conversations
+- Component explanation
+
+**Usage:**
+```bash
+export OPENAI_API_KEY="your-key"
+python examples/agent_flow_example.py
 ```
 
 #### document_processing.py

@@ -1,4 +1,4 @@
-"""Tests for agents: tools list, invoke with mock LLM and tools."""
+"""Tests for agents: tools list, invoke with mock LLM and tools, adapter integration."""
 
 from unittest.mock import MagicMock
 
@@ -6,6 +6,7 @@ import pytest
 
 from src.framework.agents.base import AgentBase
 from src.framework.agents.tools import build_framework_tools, build_rag_tool
+from src.framework.adapters import LangChainLLMAdapter
 
 
 class MockRAG:
@@ -62,3 +63,20 @@ def test_agent_invoke_requires_langchain():
     rag_tool = next(t for t in tools if t.name == "rag_search")
     result = rag_tool.invoke({"query": "hello", "top_k": 2})
     assert "hello" in result or "Retrieved" in result
+
+
+def test_adapter_with_agent_tools(mock_rag):
+    """Test adapter integration with agent tools."""
+    class MockLLM:
+        def invoke(self, prompt: str, **kwargs):
+            return "Mock response"
+    
+    llm = MockLLM()
+    adapter = LangChainLLMAdapter(llm_client=llm)
+    
+    tools = build_framework_tools(rag_client=mock_rag, mcp_client=None, enable_web_search=False)
+    bound_adapter = adapter.bind_tools(tools)
+    
+    assert bound_adapter.bound_tools is not None
+    assert len(bound_adapter.bound_tools) > 0
+    assert any(t.name == "rag_search" for t in bound_adapter.bound_tools)

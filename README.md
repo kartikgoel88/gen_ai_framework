@@ -692,13 +692,37 @@ agent = LangChainReActAgent(llm=lc_llm, tools=tools)
 
 ## Examples
 
-See `examples/` directory for:
-- **Agent creation:** `create_tool_agent_example.py` — Simple agent setup with tools
-- **Multi-model evaluation:** `multi_model_evaluation_example.py` — Compare multiple models on the same dataset
-- **Agent features:** `agent_with_tools.py`, `agent_with_memory.py`, `streaming_agent.py`, `planning_agent_example.py`, `reflective_agent_example.py`
-- **Multi-agent:** `multi_agent_example.py` — Multiple specialized agents working together
-- **Chains:** `chains_example.py` — RAG, prompt, structured chains
+See `examples/` directory for comprehensive examples:
+
+### Core Examples
 - **RAG:** `basic_rag.py` — Document ingestion and querying
+- **Chains:** `chains_example.py` — All chain types including Pipeline and LangChain integration
+- **Pipeline:** `pipeline_example.py` — Multi-step chain composition
+- **Adapters:** `adapters_example.py` — LangChain adapter usage and integration
+- **Graphs:** `graph_example.py` — LangGraph workflows (RAG and agent graphs)
+- **Multi-provider LLM:** `multi_provider_llm.py` — Using multiple LLM providers
+
+### Agent Examples
+- **Agent creation:** `create_tool_agent_example.py` — Simple agent setup with tools
+- **Agent flow:** `agent_flow_example.py` — Complete step-by-step agent flow demonstration
+- **Agent with tools:** `agent_with_tools.py` — RAG and web search tools
+- **Agent with memory:** `agent_with_memory.py` — Persistent conversation memory
+- **Streaming agent:** `streaming_agent.py` — Real-time streaming of agent reasoning
+- **Planning agent:** `planning_agent_example.py` — Plan-and-solve pattern
+- **Multi-agent:** `multi_agent_example.py` — Multiple specialized agents working together
+- **Personas:** `persona_example.py` — Pre-defined and custom agent personas
+- **Complete features:** `complete_agent_features.py` — Combining memory, monitoring, cost tracking, etc.
+
+### Evaluation & Monitoring
+- **Evaluation:** `evaluation_example.py` — Task-based evaluation with metrics
+- **Multi-model evaluation:** `multi_model_evaluation_example.py` — Compare multiple models
+- **Cost monitoring:** `cost_monitoring_example.py` — Cost tracking and budget management
+- **Error recovery:** `error_recovery_example.py` — Automatic retry and error handling
+
+### Processing
+- **Document processing:** `document_processing.py` — PDF, DOCX, Excel, OCR processing
+
+See `examples/README.md` for detailed descriptions and usage instructions.
 
 ## CLI Tools
 

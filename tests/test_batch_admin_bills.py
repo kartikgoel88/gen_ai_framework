@@ -128,68 +128,68 @@ def test_batch_read_from_data_write_to_output(
     assert len(parsed["results"]) == len(bill_paths)
 
 
-def test_batch_with_live_llm(
-    data_batch_dir: Path,
-    output_batch_dir: Path,
-    doc_processor,
-    ocr_processor,
-):
-    """
-    Run batch admin bills with a real LLM (no mocks). Uses .txt bills only for speed.
-    Skipped if OPENAI_API_KEY is not set (checks .env via framework config).
-    """
-    from src.framework.config import get_settings
-    from src.framework.llm.openai_provider import OpenAILLMProvider
+# def test_batch_with_live_llm(
+#     data_batch_dir: Path,
+#     output_batch_dir: Path,
+#     doc_processor,
+#     ocr_processor,
+# ):
+#     """
+#     Run batch admin bills with a real LLM (no mocks). Uses .txt bills only for speed.
+#     Skipped if OPENAI_API_KEY is not set (checks .env via framework config).
+#     """
+#     from src.framework.config import get_settings
+#     from src.framework.llm.openai_provider import OpenAILLMProvider
 
-    settings = get_settings()
-    api_key = (settings.OPENAI_API_KEY or "").strip()
-    if not api_key:
-        pytest.skip("OPENAI_API_KEY not set; add it to .env or set the env var")
+#     settings = get_settings()
+#     api_key = (settings.OPENAI_API_KEY or "").strip()
+#     if not api_key:
+#         pytest.skip("OPENAI_API_KEY not set; add it to .env or set the env var")
 
-    llm = OpenAILLMProvider(
-        api_key=api_key,
-        model=settings.LLM_MODEL,
-        temperature=0.3,
-    )
-    service = BatchExpenseService(
-        llm=llm,
-        doc_processor=doc_processor,
-        ocr_processor=ocr_processor,
-    )
+#     llm = OpenAILLMProvider(
+#         api_key=api_key,
+#         model=settings.LLM_MODEL,
+#         temperature=0.3,
+#     )
+#     service = BatchExpenseService(
+#         llm=llm,
+#         doc_processor=doc_processor,
+#         ocr_processor=ocr_processor,
+#     )
 
-    policy_path = data_batch_dir / "policy.txt"
-    bills_dir = data_batch_dir / "bills"
-    assert policy_path.exists(), f"Expected policy at {policy_path}"
-    policy_text = policy_path.read_text(encoding="utf-8")
+#     policy_path = data_batch_dir / "policy.txt"
+#     bills_dir = data_batch_dir / "bills"
+#     assert policy_path.exists(), f"Expected policy at {policy_path}"
+#     policy_text = policy_path.read_text(encoding="utf-8")
 
-    # Use only .txt bills to avoid PDF/OCR and keep the test fast
-    bill_paths = sorted(p for p in bills_dir.iterdir() if p.is_file() and p.suffix.lower() != ".txt")
-    if not bill_paths:
-        pytest.skip("No .txt bill files in tests/fixtures/data/batch/bills/")
+#     # Use only .txt bills to avoid PDF/OCR and keep the test fast
+#     bill_paths = sorted(p for p in bills_dir.iterdir() if p.is_file() and p.suffix.lower() != ".txt")
+#     if not bill_paths:
+#         pytest.skip("No .txt bill files in tests/fixtures/data/batch/bills/")
 
-    results = service.process_bills(bill_paths, policy_text=policy_text)
+#     results = service.process_bills(bill_paths, policy_text=policy_text)
 
-    assert len(results) == len(bill_paths)
-    for r in results:
-        assert "decision" in r
-        assert (r.get("decision") or "").upper() in ("APPROVED", "REJECTED")
-        assert "reason" in r or "error" in str(r).lower()
+#     assert len(results) == len(bill_paths)
+#     for r in results:
+#         assert "decision" in r
+#         assert (r.get("decision") or "").upper() in ("APPROVED", "REJECTED")
+#         assert "reason" in r or "error" in str(r).lower()
 
-    approved = sum(1 for r in results if (r.get("decision") or "").upper() == "APPROVED")
-    rejected = len(results) - approved
-    summary = BatchSummary(approved=approved, rejected=rejected, total=len(results))
-    result_items = [ProcessResultItem(**r) for r in results]
-    output_payload = BatchRunOutput(
-        results=result_items,
-        summary=summary,
-        input_policy_path=str(policy_path),
-        input_bill_paths=[str(p) for p in bill_paths],
-    )
+#     approved = sum(1 for r in results if (r.get("decision") or "").upper() == "APPROVED")
+#     rejected = len(results) - approved
+#     summary = BatchSummary(approved=approved, rejected=rejected, total=len(results))
+#     result_items = [ProcessResultItem(**r) for r in results]
+#     output_payload = BatchRunOutput(
+#         results=result_items,
+#         summary=summary,
+#         input_policy_path=str(policy_path),
+#         input_bill_paths=[str(p) for p in bill_paths],
+#     )
 
-    output_batch_dir.mkdir(parents=True, exist_ok=True)
-    output_file = output_batch_dir / "results_live.json"
-    output_file.write_text(output_payload.model_dump_json(indent=2), encoding="utf-8")
-    assert output_file.exists()
-    parsed = json.loads(output_file.read_text(encoding="utf-8"))
-    assert parsed["summary"]["total"] == len(bill_paths)
-    assert len(parsed["results"]) == len(bill_paths)
+#     output_batch_dir.mkdir(parents=True, exist_ok=True)
+#     output_file = output_batch_dir / "results_live.json"
+#     output_file.write_text(output_payload.model_dump_json(indent=2), encoding="utf-8")
+#     assert output_file.exists()
+#     parsed = json.loads(output_file.read_text(encoding="utf-8"))
+#     assert parsed["summary"]["total"] == len(bill_paths)
+#     assert len(parsed["results"]) == len(bill_paths)

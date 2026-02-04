@@ -29,7 +29,7 @@ from typing import Any, List, Optional
 from pydantic import ConfigDict
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AIMessage, BaseMessage
+from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.tools import BaseTool
 
@@ -59,11 +59,14 @@ class LangChainLLMAdapter(BaseChatModel):
         use_native_tool_calling: bool = False,
         **kwargs
     ):
-        super().__init__(**kwargs)
-        self.llm_client = llm_client
-        self.bound_tools = bound_tools
-        self.serializer_type = serializer_type
-        self.use_native_tool_calling = use_native_tool_calling
+        # Pass all fields to super().__init__ for Pydantic validation
+        super().__init__(
+            llm_client=llm_client,
+            bound_tools=bound_tools,
+            serializer_type=serializer_type,
+            use_native_tool_calling=use_native_tool_calling,
+            **kwargs
+        )
 
     @property
     def _llm_type(self) -> str:
@@ -111,10 +114,14 @@ class LangChainLLMAdapter(BaseChatModel):
                             for tc in tool_call_response.tool_calls
                         ]
                     
-                    message = AIMessage(
-                        content=tool_call_response.content,
-                        tool_calls=tool_calls if tool_calls else None
-                    )
+                    # Only include tool_calls if we have any (Pydantic v2 requires list, not None)
+                    if tool_calls:
+                        message = AIMessage(
+                            content=tool_call_response.content,
+                            tool_calls=tool_calls
+                        )
+                    else:
+                        message = AIMessage(content=tool_call_response.content)
                     
                     return ChatResult(generations=[ChatGeneration(message=message)])
                 except NotImplementedError:
@@ -144,6 +151,25 @@ class LangChainLLMAdapter(BaseChatModel):
                 if tool_call:
                     tool_calls.append(tool_call)
                     message_content = ""
+            
+            # Return message with tool_calls if found (LangChain agent will validate/execute)
+            # Only include tool_calls if we have any (Pydantic v2 requires list, not None)
+            if tool_calls:
+                message = AIMessage(
+                    content=message_content,
+                    tool_calls=tool_calls
+                )
+            else:
+                message = AIMessage(content=message_content)
+            return ChatResult(generations=[ChatGeneration(message=message)])
+            
+        except NotImplementedError:
+            raise NotImplementedError(
+                f"LLM client {type(self.llm_client).__name__} does not support invoke(). "
+                "Make sure your LLM provider implements the invoke() method."
+            )
+        except Exception as e:
+            raise RuntimeError(f"Error calling LLM client: {e}") from e
     
     def _try_parse_json_tool_call(self, response: str) -> Optional[dict]:
         """Try to parse a JSON tool call from response."""
@@ -160,21 +186,6 @@ class LangChainLLMAdapter(BaseChatModel):
         except json.JSONDecodeError:
             pass
         return None
-            
-            # Return message with tool_calls if found (LangChain agent will validate/execute)
-            message = AIMessage(
-                content=message_content,
-                tool_calls=tool_calls if tool_calls else None
-            )
-            return ChatResult(generations=[ChatGeneration(message=message)])
-            
-        except NotImplementedError:
-            raise NotImplementedError(
-                f"LLM client {type(self.llm_client).__name__} does not support invoke(). "
-                "Make sure your LLM provider implements the invoke() method."
-            )
-        except Exception as e:
-            raise RuntimeError(f"Error calling LLM client: {e}") from e
     
     def _stream(
         self,
@@ -191,7 +202,7 @@ class LangChainLLMAdapter(BaseChatModel):
             if hasattr(self.llm_client, 'stream_invoke'):
                 try:
                     for chunk in self.llm_client.stream_invoke(prompt, **kwargs):
-                        yield ChatGenerationChunk(message=AIMessage(content=chunk))
+                        yield ChatGenerationChunk(message=AIMessageChunk(content=chunk))
                     return
                 except NotImplementedError:
                     pass  # Fall back to non-streaming
@@ -200,7 +211,7 @@ class LangChainLLMAdapter(BaseChatModel):
             result = self._generate(messages, stop=stop, run_manager=run_manager, **kwargs)
             if result.generations:
                 content = result.generations[0].message.content if hasattr(result.generations[0].message, 'content') else str(result.generations[0].message)
-                yield ChatGenerationChunk(message=AIMessage(content=content))
+                yield ChatGenerationChunk(message=AIMessageChunk(content=content))
         except NotImplementedError as e:
             raise NotImplementedError(
                 f"Streaming not supported by LLM client {type(self.llm_client).__name__}. "

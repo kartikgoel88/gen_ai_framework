@@ -5,7 +5,7 @@ from typing import Any, List, Optional, Union
 from pydantic import ConfigDict
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AIMessage, BaseMessage
+from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.tools import BaseTool
 
@@ -44,12 +44,15 @@ class LangChainLLMAdapter(BaseChatModel):
         use_native_tool_calling: bool = False,
         **kwargs
     ):
-        super().__init__(**kwargs)
-        self.llm_client = llm_client
-        self.bound_tools = bound_tools
-        self.serializer_type = serializer_type
-        self.parser_type = parser_type
-        self.use_native_tool_calling = use_native_tool_calling
+        # Pass all fields to super().__init__ for Pydantic validation
+        super().__init__(
+            llm_client=llm_client,
+            bound_tools=bound_tools,
+            serializer_type=serializer_type,
+            parser_type=parser_type,
+            use_native_tool_calling=use_native_tool_calling,
+            **kwargs
+        )
         self._recovery_manager = ErrorRecoveryManager()
 
     @property
@@ -108,10 +111,14 @@ class LangChainLLMAdapter(BaseChatModel):
                 for tc in tool_call_response.tool_calls
             ]
             
-            message = AIMessage(
-                content=tool_call_response.content,
-                tool_calls=tool_calls if tool_calls else None
-            )
+            # Only include tool_calls if we have any (Pydantic v2 requires list, not None)
+            if tool_calls:
+                message = AIMessage(
+                    content=tool_call_response.content,
+                    tool_calls=tool_calls
+                )
+            else:
+                message = AIMessage(content=tool_call_response.content)
             
             return ChatResult(generations=[ChatGeneration(message=message)])
         except NotImplementedError:
@@ -133,11 +140,14 @@ class LangChainLLMAdapter(BaseChatModel):
         # Parse tool calls if tools are bound
         tool_calls, message_content = self._parse_tool_calls(response, tool_definitions)
         
-        # Create AIMessage
-        message = AIMessage(
-            content=message_content,
-            tool_calls=tool_calls if tool_calls else None
-        )
+        # Create AIMessage - only include tool_calls if we have any (Pydantic v2 requires list, not None)
+        if tool_calls:
+            message = AIMessage(
+                content=message_content,
+                tool_calls=tool_calls
+            )
+        else:
+            message = AIMessage(content=message_content)
         
         return ChatResult(generations=[ChatGeneration(message=message)])
     
@@ -221,7 +231,7 @@ class LangChainLLMAdapter(BaseChatModel):
             result = self._generate(messages, stop=stop, run_manager=run_manager, **kwargs)
             if result.generations:
                 content = self._extract_content_from_result(result.generations[0])
-                yield ChatGenerationChunk(message=AIMessage(content=content))
+                yield ChatGenerationChunk(message=AIMessageChunk(content=content))
         except NotImplementedError as e:
             raise NotImplementedError(
                 f"Streaming not supported by LLM client {type(self.llm_client).__name__}. "
@@ -241,15 +251,16 @@ class LangChainLLMAdapter(BaseChatModel):
         accumulated_content = ""
         for chunk in self.llm_client.stream_invoke(prompt, **kwargs):
             accumulated_content += chunk
-            yield ChatGenerationChunk(message=AIMessage(content=chunk))
+            yield ChatGenerationChunk(message=AIMessageChunk(content=chunk))
         
         # After streaming completes, try to parse tool calls if tools are bound
         if tool_definitions and accumulated_content:
             tool_calls = self._parse_tool_calls_from_stream(accumulated_content, tool_definitions)
             if tool_calls:
                 yield ChatGenerationChunk(
-                    message=AIMessage(content="", tool_calls=tool_calls)
+                    message=AIMessageChunk(content="", tool_calls=tool_calls)
                 )
+            # If no tool calls, final chunk was already yielded above
     
     def _parse_tool_calls_from_stream(
         self,

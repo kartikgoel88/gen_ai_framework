@@ -4,7 +4,7 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 UTC_FMT = "%Y-%m-%dT%H:%M:%SZ"
 
@@ -66,8 +66,8 @@ class FeedbackStore:
     ) -> str:
         """Append a feedback entry. Returns entry id (timestamp-based)."""
         from uuid import uuid4
-        entry_id = f"{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{uuid4().hex[:8]}"
-        created = datetime.utcnow().strftime(UTC_FMT)
+        entry_id = f"{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}_{uuid4().hex[:8]}"
+        created = datetime.now(timezone.utc).strftime(UTC_FMT)
         entry = FeedbackEntry(
             id=entry_id,
             session_id=session_id,

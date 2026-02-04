@@ -7,6 +7,8 @@ This example demonstrates how to use different chain types:
 - Summarization Chain
 - Classification Chain
 - Extraction Chain
+- Pipeline (Multi-step chains)
+- LangChain Integration
 """
 
 from src.framework.config import get_settings
@@ -17,7 +19,11 @@ from src.framework.chains import (
     StructuredChain,
     SummarizationChain,
     ClassificationChain,
-    ExtractionChain
+    ExtractionChain,
+    Pipeline,
+    PipelineStep,
+    build_langchain_prompt_chain,
+    build_langchain_rag_chain,
 )
 
 
@@ -99,6 +105,55 @@ def main():
         "text": "John works at Google in Mountain View, California."
     })
     print(f"Result: {result}\n")
+    
+    # 7. Pipeline (Multi-step Chain)
+    print("7. Pipeline (Multi-step Chain):")
+    print("-" * 60)
+    # Create a pipeline: Extract → Summarize → Classify
+    extract_step = PipelineStep(
+        step_id="extract",
+        chain=extraction_chain,
+        output_key="extracted"
+    )
+    summarize_step = PipelineStep(
+        step_id="summarize",
+        chain=summarization_chain,
+        output_key="summary"
+    )
+    classify_step = PipelineStep(
+        step_id="classify",
+        chain=classification_chain,
+        output_key="classification"
+    )
+    
+    pipeline = Pipeline(steps=[extract_step, summarize_step, classify_step])
+    result = pipeline.invoke({
+        "text": "John Doe, a software engineer at Google, loves working on AI projects. He finds the work exciting and rewarding."
+    })
+    print(f"Extracted: {result.get('extracted', 'N/A')}")
+    print(f"Summary: {result.get('summary', 'N/A')}")
+    print(f"Classification: {result.get('classification', 'N/A')}\n")
+    
+    # 8. LangChain Integration
+    print("8. LangChain Integration:")
+    print("-" * 60)
+    # Build LangChain LCEL chain
+    langchain_chain = build_langchain_prompt_chain(
+        llm=llm,
+        template="Translate '{text}' to Spanish",
+        input_variables=["text"]
+    )
+    result = langchain_chain.invoke({"text": "Hello, world!"})
+    print(f"Result: {result}\n")
+    
+    # LangChain RAG chain
+    langchain_rag_chain = build_langchain_rag_chain(
+        llm=llm,
+        rag=rag,
+        top_k=2
+    )
+    result = langchain_rag_chain.invoke({"question": "What is Python?"})
+    print(f"RAG Result: {result}\n")
 
 
 if __name__ == "__main__":
