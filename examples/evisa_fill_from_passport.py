@@ -22,15 +22,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.framework.documents.types import ExtractResult
-
-
-def _date_to_ddmmyyyy(s: str) -> str:
-    """Convert YYYY-MM-DD to DD/MM/YYYY for forms that expect it."""
-    if not s or len(s) != 10 or s[4] != "-" or s[7] != "-":
-        return str(s)
-    y, m, d = s[:4], s[5:7], s[8:10]
-    return f"{d}/{m}/{y}"
-
+from src.framework.utils.date_utils import date_to_ddmmyyyy
 
 # Per-field: list of (strategy, value). strategy = "placeholder" | "label" | "css"; value = placeholder text, label text, or CSS selector.
 # We try each until one locator finds an element and fill succeeds.
@@ -53,7 +45,7 @@ EVISA_FIELDS = {
         ("css", "input[id*='name']"),
         ("css", "input[placeholder*='ame']"),
     ]),
-    "date_of_birth": (_date_to_ddmmyyyy, [
+    "date_of_birth": (date_to_ddmmyyyy, [
         ("placeholder", "Date of birth"),
         ("placeholder", "DOB"),
         ("label", "Date of birth"),
@@ -62,7 +54,7 @@ EVISA_FIELDS = {
         ("css", "input[id*='birth']"),
         ("css", "input[placeholder*='irth']"),
     ]),
-    "date_of_issue": (_date_to_ddmmyyyy, [
+    "date_of_issue": (date_to_ddmmyyyy, [
         ("placeholder", "Date of issue"),
         ("placeholder", "Issue date"),
         ("label", "Issue date"),
@@ -70,7 +62,7 @@ EVISA_FIELDS = {
         ("css", "input[id*='issue']"),
         ("css", "input[placeholder*='ssue']"),
     ]),
-    "date_of_expiry": (_date_to_ddmmyyyy, [
+    "date_of_expiry": (date_to_ddmmyyyy, [
         ("placeholder", "Date of expiry"),
         ("placeholder", "Expiry"),
         ("label", "Expiry date"),

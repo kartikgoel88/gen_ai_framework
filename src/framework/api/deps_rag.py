@@ -9,28 +9,12 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from functools import lru_cache
-
+from ..config import get_settings_dep, FrameworkSettings
 from ..rag.base import RAGClient
 from ..rag.chroma_rag import ChromaRAG
 from ..rag.reranker import CrossEncoderReranker
-from ..embeddings.base import EmbeddingsProvider
-from ..embeddings.openai_provider import OpenAIEmbeddingsProvider
-from ..embeddings.sentence_transformer_provider import SentenceTransformerEmbeddingsProvider
-from ..config import get_settings_dep, FrameworkSettings
 
-
-@lru_cache
-def _get_embeddings_provider(
-    provider: str,
-    openai_model: str,
-    openai_api_key: str | None,
-    st_model: str,
-) -> EmbeddingsProvider:
-    """Create embeddings provider (duplicated here to avoid circular import)."""
-    if provider == "sentence_transformers":
-        return SentenceTransformerEmbeddingsProvider(model_name=st_model)
-    return OpenAIEmbeddingsProvider(model=openai_model, openai_api_key=openai_api_key)
+from .deps_embeddings import _get_embeddings_provider
 
 
 def _get_reranker_if_enabled(rerank_top_n: int) -> CrossEncoderReranker | None:

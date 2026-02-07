@@ -1,9 +1,31 @@
 """Types and shared constants for document processing."""
 
-from typing import Any, List, Optional
+from pathlib import Path
+from typing import Any, List, Optional, Tuple
 
 # File extensions supported by OcrProcessor (images).
 IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".tif", ".webp")
+
+
+def validate_file_path(
+    path: Path,
+    allowed_extensions: Optional[Tuple[str, ...]] = None,
+) -> Optional[str]:
+    """
+    Validate file path exists and (optionally) has an allowed extension.
+
+    Args:
+        path: Path to validate.
+        allowed_extensions: If given, path.suffix must be in this tuple (lowercased). None = only check existence.
+
+    Returns:
+        None if valid; otherwise an error message string.
+    """
+    if not path.exists():
+        return f"File not found: {path}"
+    if allowed_extensions is not None and path.suffix.lower() not in allowed_extensions:
+        return f"Unsupported type: {path.suffix}. Allowed: {', '.join(allowed_extensions)}."
+    return None
 
 
 class ExtractResult:

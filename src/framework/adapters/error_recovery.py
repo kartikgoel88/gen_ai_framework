@@ -1,8 +1,10 @@
 """Error recovery handlers for agent operations."""
 
+import time
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 
+from ..utils.retry_utils import compute_backoff_delay, is_rate_limit_error
 from .errors import ToolCallError, ToolCallParseError, InvalidToolArgumentsError
 
 
@@ -89,19 +91,19 @@ class RateLimitHandler(ErrorRecoveryHandler):
     
     def can_handle(self, error: Exception) -> bool:
         """Handle rate limit errors."""
-        error_msg = str(error).lower()
-        return "rate limit" in error_msg or "429" in str(error)
+        return is_rate_limit_error(error)
     
     def handle(self, error: Exception, context: dict[str, Any]) -> Any:
         """Wait and retry with exponential backoff."""
-        import time
-        
         retry_count = context.get("retry_count", 0)
-        wait_time = min(self.backoff_factor ** retry_count, self.max_wait)
-        
+        wait_time = compute_backoff_delay(
+            retry_count,
+            initial_delay=1.0,
+            factor=self.backoff_factor,
+            max_delay=self.max_wait,
+            rate_limit_min=60.0,
+        )
         time.sleep(wait_time)
-        
-        # Signal to retry
         raise error  # Re-raise to trigger retry
 
 

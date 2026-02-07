@@ -1,12 +1,13 @@
 """Error recovery and retry logic for agents."""
 
-from typing import Any, Optional, Callable, List
+import time
 from dataclasses import dataclass
 from enum import Enum
-import time
+from typing import Any, Callable, List, Optional
 
-from .base import AgentBase
 from ..exceptions import FrameworkError
+from ..utils.retry_utils import compute_backoff_delay, is_rate_limit_error
+from .base import AgentBase
 
 
 class ErrorType(Enum):
@@ -89,16 +90,13 @@ class ErrorRecoveryAgent(AgentBase):
                 
                 # Check if we have retries left
                 if attempt < self._retry_config.max_retries:
-                    # Calculate delay with exponential backoff
-                    delay = min(
-                        self._retry_config.initial_delay * (self._retry_config.backoff_factor ** attempt),
-                        self._retry_config.max_delay
+                    delay = compute_backoff_delay(
+                        attempt,
+                        initial_delay=self._retry_config.initial_delay,
+                        factor=self._retry_config.backoff_factor,
+                        max_delay=self._retry_config.max_delay,
+                        rate_limit_min=60.0 if error_type == ErrorType.RATE_LIMIT else None,
                     )
-                    
-                    # Handle rate limit specially
-                    if error_type == ErrorType.RATE_LIMIT:
-                        delay = max(delay, 60.0)  # Wait at least 60s for rate limits
-                    
                     time.sleep(delay)
                     continue
                 else:
@@ -124,9 +122,7 @@ class ErrorRecoveryAgent(AgentBase):
             ErrorType
         """
         error_str = str(error).lower()
-        error_type_str = type(error).__name__.lower()
-        
-        if "rate limit" in error_str or "429" in error_str:
+        if is_rate_limit_error(error):
             return ErrorType.RATE_LIMIT
         elif "timeout" in error_str or "timed out" in error_str:
             return ErrorType.TIMEOUT

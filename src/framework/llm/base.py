@@ -1,10 +1,9 @@
 """Abstract LLM client interface."""
 
-import json
-import re
 from abc import ABC, abstractmethod
 from typing import Any, AsyncIterator, Iterator, Optional
 
+from ..utils.json_utils import parse_json_from_response as _parse_json_from_response
 from .tool_calling import ToolCallResponse, ToolDefinition
 
 
@@ -89,15 +88,4 @@ class LLMClient(ABC):
     @staticmethod
     def parse_json_from_response(text: str) -> dict[str, Any]:
         """Extract a single JSON object from model response text. Used by invoke_structured implementations."""
-        text = (text or "").strip()
-        if text.startswith("```"):
-            match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
-            if match:
-                text = match.group(1)
-        match = re.search(r"(\{.*\})", text, re.DOTALL)
-        if match:
-            try:
-                return json.loads(match.group(1))
-            except json.JSONDecodeError:
-                pass
-        return {"raw": text}
+        return _parse_json_from_response(text, default_raw=True)

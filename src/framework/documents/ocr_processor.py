@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, List, Optional, Union
 
 from .base import BaseDocumentProcessor
-from .types import IMAGE_EXTENSIONS, ExtractResult, OcrResult
+from .types import IMAGE_EXTENSIONS, ExtractResult, OcrResult, validate_file_path
 
 
 def _parse_readtext_result(result: List[Any]) -> tuple[str, List[dict]]:
@@ -57,8 +57,10 @@ class OcrProcessor(BaseDocumentProcessor):
         Returns ExtractResult with text, metadata, and optional error.
         """
         path = Path(file_path)
-        if not path.exists():
-            return ExtractResult.error_result(f"File not found: {path}")
+        allowed = (".pdf",) + IMAGE_EXTENSIONS
+        err = validate_file_path(path, allowed)
+        if err:
+            return ExtractResult.error_result(err)
         suffix = path.suffix.lower()
         if suffix == ".pdf":
             return self._extract_pdf(path)

@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Union
 
 from .base import BaseDocumentProcessor
-from .types import IMAGE_EXTENSIONS, ExtractResult
+from .types import IMAGE_EXTENSIONS, ExtractResult, validate_file_path
 
 
 def _mrz_to_text_and_metadata(mrz: Any) -> tuple[str, dict[str, Any]]:
@@ -43,12 +43,9 @@ class PassportEyeProcessor(BaseDocumentProcessor):
 
     def extract(self, file_path: Union[str, Path]) -> ExtractResult:
         path = Path(file_path)
-        if not path.exists():
-            return ExtractResult.error_result(f"File not found: {path}")
-        if path.suffix.lower() not in IMAGE_EXTENSIONS:
-            return ExtractResult.error_result(
-                f"Unsupported type: {path.suffix}. PassportEye supports images: {', '.join(IMAGE_EXTENSIONS)}."
-            )
+        err = validate_file_path(path, IMAGE_EXTENSIONS)
+        if err:
+            return ExtractResult.error_result(err)
         try:
             from passporteye import read_mrz
         except ImportError:

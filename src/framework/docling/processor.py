@@ -9,7 +9,7 @@ warnings.filterwarnings("ignore", message=".*strict_text.*", category=Deprecatio
 warnings.filterwarnings("ignore", message=".*strict_text.*")
 
 from src.framework.documents.base import BaseDocumentProcessor
-from src.framework.documents.types import ExtractResult
+from src.framework.documents.types import ExtractResult, validate_file_path
 
 from .types import DoclingResult
 
@@ -67,8 +67,9 @@ class DoclingProcessor(BaseDocumentProcessor):
     ) -> DoclingResult:
         """Parse document with Docling. export_format: 'markdown' | 'text'."""
         path = Path(file_path)
-        if not path.exists():
-            return DoclingResult(text="", error=f"File not found: {path}")
+        err = validate_file_path(path, allowed_extensions=None)
+        if err:
+            return DoclingResult(text="", error=err)
         try:
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", message=".*strict_text.*", category=DeprecationWarning)

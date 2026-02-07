@@ -36,7 +36,7 @@ Agent          "What do we do with that?"
 
 ### `LangChainLLMAdapter` (ChatModel Layer)
 
-**Location**: `src/framework/adapters/langchain_adapter_refactored.py`
+**Location**: `src/framework/adapters/langchain_adapter.py`
 
 **Responsibilities**:
 - Serialize messages to provider format
@@ -100,7 +100,7 @@ messages = interpreter.process_llm_response(llm_message)
 ### Option 1: Use Refactored Adapter (Recommended)
 
 ```python
-from src.framework.adapters.langchain_adapter_refactored import LangChainLLMAdapter
+from src.framework.adapters import LangChainLLMAdapter
 from src.framework.agents.tool_interpreter import ToolInterpreter
 from src.framework.agents.tool_registry import ToolRegistry
 
