@@ -5,8 +5,8 @@ from pathlib import Path
 from typing import Any, Optional
 
 from src.framework.llm.base import LLMClient
+from src.framework.documents import IMAGE_EXTENSIONS, OcrProcessor
 from src.framework.documents.processor import DocumentProcessor
-from src.framework.ocr.processor import OcrProcessor
 
 from . import validations as val
 from .schemas import EmployeeContext, PolicySection
@@ -15,9 +15,6 @@ from .schemas import EmployeeContext, PolicySection
 BILL_TYPE_CAB = "cab"
 BILL_TYPE_MEALS = "meals"
 BILL_TYPE_UNKNOWN = "unknown"
-
-# Image extensions for OCR
-IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff", ".tif"}
 
 # Bill file extensions (for folder listing)
 BILL_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff", ".tif", ".docx", ".txt"}

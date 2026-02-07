@@ -4,17 +4,18 @@ from pathlib import Path
 
 import pytest
 
+from src.framework.documents.types import ExtractResult
 from src.framework.docling.processor import DoclingProcessor
 from src.framework.docling.types import DoclingResult
 
 
 def test_docling_processor_extract_file_not_found(tmp_path):
-    """DoclingProcessor extract returns error when file does not exist."""
+    """DoclingProcessor extract (base interface) returns ExtractResult when file does not exist."""
     proc = DoclingProcessor()
     path = tmp_path / "nonexistent.pdf"
     assert not path.exists()
     result = proc.extract(path)
-    assert isinstance(result, DoclingResult)
+    assert isinstance(result, ExtractResult)
     assert result.text == ""
     assert result.error is not None
     assert "not found" in result.error.lower() or str(path) in result.error

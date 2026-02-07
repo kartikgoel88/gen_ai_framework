@@ -11,11 +11,12 @@ from src.clients import (
     prompts_router,
     graph_router,
     evaluation_router,
+    web_automation_router,
 )
 
 app = create_app(
     title="Gen AI Framework",
-    description="Modular Gen AI API: API, LLM, RAG, agents, batch expense, queue, streaming, prompts, LangGraph",
+    description="Modular Gen AI API: API, LLM, RAG, agents, batch expense, queue, streaming, prompts, LangGraph, web automation",
     version="0.1.0",
 )
 
@@ -29,3 +30,4 @@ app.include_router(queue_router)
 app.include_router(prompts_router)
 app.include_router(graph_router)
 app.include_router(evaluation_router)
+app.include_router(web_automation_router)

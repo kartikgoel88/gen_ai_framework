@@ -37,7 +37,7 @@ from src.framework.chains import (
 from src.framework.chains.summarization_chain import DEFAULT_SUMMARY_PROMPT
 from src.framework.documents.processor import DocumentProcessor
 from src.framework.documents.langchain_loader import LangChainDocProcessor
-from src.framework.ocr.processor import OcrProcessor
+from src.framework.documents import OcrProcessor
 from src.framework.docling.processor import DoclingProcessor
 from src.framework.mcp.client import MCPClientBridge
 from src.framework.embeddings.base import EmbeddingsProvider

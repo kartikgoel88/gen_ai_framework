@@ -8,9 +8,8 @@ import streamlit as st
 # Framework
 from src.framework.config import get_settings
 from src.framework.llm.base import LLMClient
+from src.framework.documents import OcrProcessor
 from src.framework.documents.processor import DocumentProcessor
-from src.framework.documents.pdf_ocr_processor import PdfOcrProcessor
-from src.framework.ocr.processor import OcrProcessor
 from src.framework.api.deps import (
     get_llm,
     get_document_processor,
@@ -32,7 +31,7 @@ def _cached_llm():
 def _cached_document_processor():
     """Cached document processor."""
     settings = get_settings()
-    pdf_ocr = PdfOcrProcessor(dpi=300, min_text_len=10)
+    pdf_ocr = OcrProcessor(pdf_dpi=300, pdf_min_text_len=10)
     return get_document_processor(settings, pdf_ocr)
 
 

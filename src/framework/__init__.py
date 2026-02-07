@@ -16,8 +16,7 @@ Architecture:
     - **llm/**: LLM abstraction with provider implementations
     - **rag/**: RAG clients for various vector stores
     - **embeddings/**: Embedding providers (OpenAI, SentenceTransformers)
-    - **documents/**: Document extraction and processing
-    - **ocr/**: OCR processing for images
+    - **documents/**: Document extraction and processing (including OCR for images)
     - **agents/**: Agent implementations with tool support
     - **chains/**: Chain implementations for common tasks
     - **graph/**: LangGraph workflow builders

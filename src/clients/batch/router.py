@@ -14,7 +14,7 @@ from src.framework.api.deps import (
 )
 from src.framework.llm.base import LLMClient
 from src.framework.documents.processor import DocumentProcessor
-from src.framework.ocr.processor import OcrProcessor
+from src.framework.documents import OcrProcessor
 
 from .service import BatchExpenseService
 from .schemas import (

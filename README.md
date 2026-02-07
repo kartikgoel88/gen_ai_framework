@@ -34,7 +34,8 @@ gen_ai_framework/
 │   │   ├── queue/             # Enqueue RAG/bills/agent; poll task status
 │   │   ├── prompts/           # Versioned prompts, run template, A/B test
 │   │   ├── graph/             # LangGraph RAG and agent invoke/stream
-│   │   └── evaluation/        # Golden run (regression), feedback, RAG export
+│   │   ├── evaluation/        # Golden run (regression), feedback, RAG export
+│   │   └── web_automation/    # Navigate URL, fill fields, upload files (Playwright)
 │   │
 │   └── main.py                # App: mounts all clients
 ```
@@ -62,6 +63,7 @@ gen_ai_framework/
 | **prompts**      | `PromptStore` (versioned files), `TemplateRunner`, `ABTestRunner`. |
 | **evaluation**   | `GoldenDatasetRunner`, `FeedbackStore`, RAG export. |
 | **queue**        | Celery tasks: batch RAG, batch bills, agent run. |
+| **web_automation** | WebAutomationClient: navigate to URL, fill fields, upload files, click (Playwright). |
 
 ## Clients & API Summary
 
@@ -76,6 +78,7 @@ gen_ai_framework/
 | **Prompts**   | `/prompts`       | List names/versions, get/put prompt, **run** template, **run/versioned**, **ab-test**. |
 | **Graph**     | `/graph`         | **POST** invoke (rag \| agent), **POST** stream (RAG). |
 | **Evaluation**| `/evaluation`   | **POST** golden/run (regression), **POST** feedback, **GET** feedback, **POST** feedback/export, **GET** rag/export, **GET** rag/export/download. |
+| **Web automation** | `/web-automation` | **POST** run (form: spec JSON + files) or **POST** run-json (fill/click/wait only). Navigate to URL, fill fields, upload files, click. |
 
 ## Setup
 
@@ -99,6 +102,7 @@ Optional extras:
 - **Celery (task queue):** `pip install -e ".[celery]"` and set `CELERY_BROKER_URL`, `CELERY_RESULT_BACKEND` (e.g. Redis).
 - **Confluence:** `pip install -e ".[confluence]"` and set `CONFLUENCE_BASE_URL`, then Cloud: `CONFLUENCE_EMAIL` + `CONFLUENCE_API_TOKEN`, or Server: `CONFLUENCE_USER` + `CONFLUENCE_PASSWORD`. Use `POST /tasks/rag/ingest/confluence` to ingest pages into RAG.
 - **Vector stores:** `pip install -e ".[vectorstore-pinecone]"` (or weaviate, qdrant, pgvector) and set `VECTOR_STORE` + backend env vars.
+- **Web automation:** Playwright is included. Install browser once: `playwright install chromium`. Then use `POST /web-automation/run` or `POST /web-automation/run-json`.
 
 ## Run
 

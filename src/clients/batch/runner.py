@@ -27,8 +27,7 @@ from src.framework.llm.grok_provider import GrokLLMProvider
 from src.framework.llm.gemini_provider import GeminiLLMProvider
 from src.framework.llm.huggingface_provider import HuggingFaceLLMProvider
 from src.framework.documents.processor import DocumentProcessor
-from src.framework.documents.pdf_ocr_processor import PdfOcrProcessor
-from src.framework.ocr.processor import OcrProcessor
+from src.framework.documents import OcrProcessor
 
 from .service import BatchExpenseService
 
@@ -115,9 +114,9 @@ def run(
     upload_dir = Path(upload_dir)
     upload_dir.mkdir(parents=True, exist_ok=True)
 
-    pdf_ocr = PdfOcrProcessor(dpi=300, min_text_len=10)
-    doc_processor = DocumentProcessor(upload_dir=str(upload_dir), pdf_processor=pdf_ocr)
-    ocr_processor = OcrProcessor()
+    ocr = OcrProcessor(pdf_dpi=300, pdf_min_text_len=10)
+    doc_processor = DocumentProcessor(upload_dir=str(upload_dir), pdf_processor=ocr)
+    ocr_processor = ocr
     llm = _create_llm_from_settings(settings)
     batch_service = BatchExpenseService(
         llm=llm,

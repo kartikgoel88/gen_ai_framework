@@ -8,23 +8,24 @@ from pypdf import PdfReader
 from docx import Document as DocxDocument
 import openpyxl
 
+from .base import BaseDocumentProcessor
 from .types import ExtractResult
 
 if TYPE_CHECKING:
-    from .pdf_ocr_processor import PdfOcrProcessor
+    from .ocr_processor import OcrProcessor
 
 
-class DocumentProcessor:
+class DocumentProcessor(BaseDocumentProcessor):
     """
     Single entry for document text extraction. Supports PDF, DOCX, Excel, TXT.
-    PDF behavior is pluggable: pass pdf_processor (e.g. PdfOcrProcessor) to use
+    PDF behavior is pluggable: pass pdf_processor (e.g. OcrProcessor) to use
     PyMuPDF + pytesseract OCR fallback for PDFs; otherwise uses PyPDF (native text only).
     """
 
     def __init__(
         self,
         upload_dir: str = "./uploads",
-        pdf_processor: Optional["PdfOcrProcessor"] = None,
+        pdf_processor: Optional["OcrProcessor"] = None,
     ):
         self.upload_dir = Path(upload_dir)
         self.upload_dir.mkdir(parents=True, exist_ok=True)
@@ -37,7 +38,7 @@ class DocumentProcessor:
         try:
             if suffix == ".pdf":
                 if self._pdf_processor is not None:
-                    result = self._pdf_processor.extract(path)
+                    result = self._pdf_processor.extract(path)  # OcrProcessor handles PDF + OCR
                     # If OCR path failed (e.g. Tesseract not installed), try PyPDF for native text
                     if not (result.text or "").strip():
                         fallback = self._extract_pdf(path)
@@ -51,9 +52,12 @@ class DocumentProcessor:
                 return self._extract_excel(path)
             if suffix == ".txt":
                 return self._extract_txt(path)
-            return ExtractResult("", metadata={"mime": mimetypes.guess_type(str(path))[0]}, error=f"Unsupported type: {suffix}")
+            return ExtractResult.error_result(
+                f"Unsupported type: {suffix}",
+                metadata={"mime": mimetypes.guess_type(str(path))[0]},
+            )
         except Exception as e:
-            return ExtractResult("", metadata={}, error=str(e))
+            return ExtractResult.error_result(str(e))
 
     def _extract_pdf(self, path: Path) -> ExtractResult:
         reader = PdfReader(path)
@@ -92,7 +96,7 @@ class DocumentProcessor:
                 return ExtractResult(text, metadata={"encoding": enc})
             except UnicodeDecodeError:
                 continue
-        return ExtractResult("", metadata={}, error="Could not decode text file")
+        return ExtractResult.error_result("Could not decode text file")
 
     def save_upload(self, content: bytes, filename: str) -> Path:
         """Save uploaded bytes to upload_dir with optional deduplication."""

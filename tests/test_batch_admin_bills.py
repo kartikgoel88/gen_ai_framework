@@ -17,7 +17,7 @@ from src.clients.batch.schemas import (
     BatchRunOutput,
 )
 from src.framework.documents.processor import DocumentProcessor
-from src.framework.ocr.processor import OcrProcessor
+from src.framework.documents import OcrProcessor
 
 
 class MockLLM:

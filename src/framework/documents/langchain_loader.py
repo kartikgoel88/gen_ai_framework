@@ -1,7 +1,7 @@
 """LangChain document loaders: load files into LangChain Document objects."""
 
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from langchain_core.documents import Document
 from langchain_community.document_loaders import (
@@ -11,14 +11,19 @@ from langchain_community.document_loaders import (
 )
 from langchain_community.document_loaders.csv_loader import CSVLoader
 
+from .base import BaseDocumentProcessor
 from .types import ExtractResult
 
 
-class LangChainDocProcessor:
+class LangChainDocProcessor(BaseDocumentProcessor):
     """Load documents using LangChain loaders; return unified text + metadata or Document list."""
 
     def __init__(self):
         pass
+
+    def extract(self, file_path: Union[str, Path]) -> ExtractResult:
+        """Extract text (base interface). Delegates to load_as_result."""
+        return self.load_as_result(file_path)
 
     def load(self, file_path: str | Path) -> List[Document]:
         """Load file into list of LangChain Documents (one per page/sheet etc.)."""
@@ -50,7 +55,7 @@ class LangChainDocProcessor:
         """Load file and return as ExtractResult (single text + metadata)."""
         docs = self.load(file_path)
         if not docs:
-            return ExtractResult("", metadata={}, error="Unsupported or empty file")
+            return ExtractResult.error_result("Unsupported or empty file")
         texts = [d.page_content for d in docs]
         meta = docs[0].metadata if docs else {}
         return ExtractResult(
