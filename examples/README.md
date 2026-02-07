@@ -116,6 +116,19 @@ Demonstrates document extraction:
 python examples/document_processing.py
 ```
 
+#### evisa_fill_from_passport.py
+Fills the Vietnam e-visa form (https://evisa.gov.vn/e-visa/foreigners) using passport details:
+- Parses passport image with PassportEye (MRZ) and optional LLM for missing fields
+- Uses web automation (Playwright) to open the URL and fill form fields
+- Dates normalized to YYYY-MM-DD then formatted as DD/MM/YYYY for the form
+
+**Usage:**
+```bash
+python -m examples.evisa_fill_from_passport --passport-image data/images/Passport-page-001.jpg
+python -m examples.evisa_fill_from_passport --passport-image path/to/passport.jpg --no-headless --extract
+```
+Update `EVISA_SELECTORS` in the script if the site’s form IDs/names change.
+
 ### Agent Examples
 
 #### agent_with_tools.py

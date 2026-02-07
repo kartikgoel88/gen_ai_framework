@@ -12,8 +12,8 @@ class BaseDocumentProcessor(ABC):
     Abstract base for document and image processors that extract text from files.
 
     Implementations: DocumentProcessor (multi-format), OcrProcessor (PDF + images),
-    DoclingProcessor (layout-aware). All return the
-    canonical ExtractResult (text, metadata, error) so they can be used
+    DoclingProcessor (layout-aware), PassportEyeProcessor (MRZ from passport/ID images).
+    All return the canonical ExtractResult (text, metadata, error) so they can be used
     interchangeably where a single processor interface is expected.
     """
 

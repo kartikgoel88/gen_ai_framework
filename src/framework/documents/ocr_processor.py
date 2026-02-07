@@ -1,4 +1,4 @@
-"""Unified OCR processor: PDFs (PyMuPDF + pytesseract fallback) and images (EasyOCR)."""
+"""Unified OCR processor: PDFs (PyMuPDF + pytesseract fallback) and images (EasyOCR or pytesseract)."""
 
 import io
 from pathlib import Path
@@ -23,7 +23,9 @@ class OcrProcessor(BaseDocumentProcessor):
     - **PDFs**: PyMuPDF native text first, then pytesseract + OpenCV OCR fallback
       for pages with little or no text (e.g. scanned). Requires: pymupdf, pytesseract,
       opencv-python-headless, numpy; Tesseract binary installed.
-    - **Images**: EasyOCR (PNG, JPG, etc.). Requires: easyocr.
+    - **Images**: EasyOCR by default, or pytesseract when use_pytesseract_for_images=True.
+      Pytesseract for images requires: pytesseract, opencv-python-headless, numpy;
+      Tesseract binary installed (e.g. brew install tesseract).
 
     Use extract(path) for both; extract_from_bytes(bytes) for in-memory images only.
     """
@@ -34,11 +36,13 @@ class OcrProcessor(BaseDocumentProcessor):
         pdf_min_text_len: int = 10,
         languages: Optional[List[str]] = None,
         gpu: bool = False,
+        use_pytesseract_for_images: bool = False,
     ):
         self._pdf_dpi = pdf_dpi
         self._pdf_min_text_len = pdf_min_text_len
         self._languages = languages or ["en"]
         self._gpu = gpu
+        self._use_pytesseract_for_images = use_pytesseract_for_images
         self._reader = None
 
     def _get_reader(self):
@@ -59,6 +63,8 @@ class OcrProcessor(BaseDocumentProcessor):
         if suffix == ".pdf":
             return self._extract_pdf(path)
         if suffix in IMAGE_EXTENSIONS:
+            if self._use_pytesseract_for_images:
+                return self._extract_ocr_pytesseract(path).to_extract_result()
             return self._extract_ocr(path).to_extract_result()
         return ExtractResult.error_result(
             f"Unsupported type: {suffix}. Use .pdf or image (e.g. .png, .jpg)."
@@ -117,6 +123,64 @@ class OcrProcessor(BaseDocumentProcessor):
             )
         except Exception as e:
             return ExtractResult.error_result(str(e))
+
+    def _extract_ocr_pytesseract(self, image_path: Union[str, Path]) -> OcrResult:
+        """Image: pytesseract + OpenCV with preprocessing for better passport/document text."""
+        path = Path(image_path)
+        if path.suffix.lower() not in IMAGE_EXTENSIONS:
+            return OcrResult(text="", error=f"Unsupported image type: {path.suffix}")
+        try:
+            import cv2
+            import pytesseract
+            img = cv2.imread(str(path))
+            if img is None:
+                return OcrResult(text="", error="Could not load image")
+            # Upscale small images so small passport text is readable by Tesseract
+            h, w = img.shape[:2]
+            scale = 1.0
+            if max(h, w) < 1600:
+                scale = 1600 / max(h, w)
+                new_w, new_h = int(w * scale), int(h * scale)
+                img = cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_CUBIC)
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            # Denoise to reduce photo noise (helps passports)
+            try:
+                gray = cv2.fastNlMeansDenoising(gray, None, h=10, templateWindowSize=7, searchWindowSize=21)
+            except Exception:
+                pass
+            # Tesseract config: PSM 3 = full auto, OEM 3 = LSTM+legacy
+            config = "--psm 3 --oem 3"
+            texts: List[str] = []
+            # Pass 1: grayscale (often best for photos)
+            t1 = (pytesseract.image_to_string(gray, lang="eng", config=config) or "").strip()
+            if t1:
+                texts.append(t1)
+            # Pass 2: adaptive threshold (helps low-contrast or scanned look)
+            thresh = cv2.adaptiveThreshold(
+                gray, 255,
+                cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                cv2.THRESH_BINARY,
+                31, 2,
+            )
+            t2 = (pytesseract.image_to_string(thresh, lang="eng", config=config) or "").strip()
+            if t2 and t2 != t1:
+                texts.append(t2)
+            # Merge: prefer longer result; if similar length, join and dedupe lines
+            seen: set[str] = set()
+            merged_lines: List[str] = []
+            for block in texts:
+                for line in block.splitlines():
+                    line = line.strip()
+                    if not line or line in seen:
+                        continue
+                    seen.add(line)
+                    merged_lines.append(line)
+            text = "\n".join(merged_lines) if merged_lines else (texts[0] if texts else "")
+            return OcrResult(text=text.strip(), details=[], error=None)
+        except ImportError as e:
+            return OcrResult(text="", error=f"pytesseract/opencv required for image OCR: {e}")
+        except Exception as e:
+            return OcrResult(text="", error=str(e))
 
     def _extract_ocr(self, image_path: Union[str, Path]) -> OcrResult:
         """Image: EasyOCR. Returns OcrResult (use .to_extract_result() for ExtractResult)."""

@@ -103,6 +103,7 @@ Optional extras:
 - **Confluence:** `pip install -e ".[confluence]"` and set `CONFLUENCE_BASE_URL`, then Cloud: `CONFLUENCE_EMAIL` + `CONFLUENCE_API_TOKEN`, or Server: `CONFLUENCE_USER` + `CONFLUENCE_PASSWORD`. Use `POST /tasks/rag/ingest/confluence` to ingest pages into RAG.
 - **Vector stores:** `pip install -e ".[vectorstore-pinecone]"` (or weaviate, qdrant, pgvector) and set `VECTOR_STORE` + backend env vars.
 - **Web automation:** Playwright is included. Install browser once: `playwright install chromium`. Then use `POST /web-automation/run` or `POST /web-automation/run-json`.
+- **PassportEye (MRZ):** Included for MRZ extraction from passport/ID images. Use `PassportEyeProcessor` or `python -m src.clients.documents.parse_passport --method passporteye`.
 
 ## Run
 

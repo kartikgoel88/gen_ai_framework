@@ -1,7 +1,8 @@
-"""Document processing: extract text and metadata from files (PDF + images via OCR)."""
+"""Document processing: extract text and metadata from files (PDF + images via OCR, MRZ via PassportEye)."""
 
 from .base import BaseDocumentProcessor
 from .ocr_processor import OcrProcessor
+from .passport_eye_processor import PassportEyeProcessor
 from .processor import DocumentProcessor
 from .types import IMAGE_EXTENSIONS, ExtractResult, OcrResult
 
@@ -12,4 +13,5 @@ __all__ = [
     "IMAGE_EXTENSIONS",
     "OcrProcessor",
     "OcrResult",
+    "PassportEyeProcessor",
 ]

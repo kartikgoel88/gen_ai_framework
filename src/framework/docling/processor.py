@@ -1,7 +1,12 @@
 """Docling processor: layout-aware document parsing with OCR support."""
 
+import warnings
 from pathlib import Path
 from typing import Union
+
+# Suppress strict_text deprecation from docling/OCR stack (may be emitted at import or during convert)
+warnings.filterwarnings("ignore", message=".*strict_text.*", category=DeprecationWarning)
+warnings.filterwarnings("ignore", message=".*strict_text.*")
 
 from src.framework.documents.base import BaseDocumentProcessor
 from src.framework.documents.types import ExtractResult
@@ -9,8 +14,35 @@ from src.framework.documents.types import ExtractResult
 from .types import DoclingResult
 
 
+def _make_converter_with_ocr():
+    """Build DocumentConverter with OCR enabled for PDF and images (so images yield text)."""
+    from docling.document_converter import DocumentConverter
+
+    try:
+        from docling.datamodel.base_models import InputFormat
+        from docling.datamodel.pipeline_options import (
+            PdfPipelineOptions,
+            TesseractCliOcrOptions,
+        )
+        from docling.document_converter import PdfFormatOption
+
+        pipeline_options = PdfPipelineOptions()
+        pipeline_options.do_ocr = True
+        pipeline_options.ocr_options = TesseractCliOcrOptions(force_full_page_ocr=True)
+        format_options = {InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)}
+        # Enable OCR for images if ImageFormatOption exists and accepts pipeline_options
+        try:
+            from docling.document_converter import ImageFormatOption
+            format_options[InputFormat.IMAGE] = ImageFormatOption(pipeline_options=pipeline_options)
+        except (ImportError, AttributeError, TypeError):
+            pass
+        return DocumentConverter(format_options=format_options)
+    except Exception:
+        return DocumentConverter()
+
+
 class DoclingProcessor(BaseDocumentProcessor):
-    """Parse documents with Docling (PDF, DOCX, etc.) and export to text/markdown."""
+    """Parse documents with Docling (PDF, DOCX, images). Layout-aware, runs locally — PII-safe (no cloud/API)."""
 
     def __init__(self, default_export_format: str = "markdown"):
         self._default_export_format = default_export_format
@@ -38,16 +70,19 @@ class DoclingProcessor(BaseDocumentProcessor):
         if not path.exists():
             return DoclingResult(text="", error=f"File not found: {path}")
         try:
-            from docling.document_converter import DocumentConverter
-            converter = DocumentConverter()
-            conv_result = converter.convert(str(path))
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", message=".*strict_text.*", category=DeprecationWarning)
+                warnings.filterwarnings("ignore", message=".*strict_text.*")
+                warnings.filterwarnings("ignore", category=DeprecationWarning, module="docling.*")
+                converter = _make_converter_with_ocr()
+                conv_result = converter.convert(str(path))
             doc = conv_result.document
             if export_format == "markdown":
                 text = doc.export_to_markdown()
             else:
                 text = doc.export_to_text()
             return DoclingResult(
-                text=text,
+                text=text or "",
                 metadata={"pages": len(getattr(doc, "pages", {})) or None},
             )
         except Exception as e:

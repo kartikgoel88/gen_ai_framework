@@ -22,38 +22,16 @@ if __name__ == "__main__":
 
 from src.framework.config import get_settings
 from src.framework.llm.base import LLMClient
-from src.framework.llm.openai_provider import OpenAILLMProvider
-from src.framework.llm.grok_provider import GrokLLMProvider
-from src.framework.llm.gemini_provider import GeminiLLMProvider
-from src.framework.llm.huggingface_provider import HuggingFaceLLMProvider
 from src.framework.documents.processor import DocumentProcessor
 from src.framework.documents import OcrProcessor
+from src.framework.api.deps_llm import get_llm
 
 from .service import BatchExpenseService
 
 
 def _create_llm_from_settings(settings) -> LLMClient:
     """Build LLM client from framework settings (no FastAPI)."""
-    provider = (settings.LLM_PROVIDER or "openai").lower().strip()
-    if provider == "grok":
-        api_key = settings.XAI_API_KEY
-        if not api_key:
-            raise ValueError("XAI_API_KEY required for Grok. Set LLM_PROVIDER=grok and XAI_API_KEY.")
-        return GrokLLMProvider(api_key=api_key, model=settings.LLM_MODEL, temperature=settings.TEMPERATURE)
-    if provider == "gemini":
-        api_key = settings.GOOGLE_API_KEY
-        if not api_key:
-            raise ValueError("GOOGLE_API_KEY required for Gemini.")
-        return GeminiLLMProvider(api_key=api_key, model=settings.LLM_MODEL, temperature=settings.TEMPERATURE)
-    if provider == "huggingface":
-        api_key = settings.HUGGINGFACE_API_KEY
-        if not api_key:
-            raise ValueError("HUGGINGFACE_API_KEY required for Hugging Face.")
-        return HuggingFaceLLMProvider(api_key=api_key, model=settings.LLM_MODEL, temperature=settings.TEMPERATURE)
-    api_key = settings.OPENAI_API_KEY
-    if not api_key:
-        raise ValueError("OPENAI_API_KEY required for OpenAI.")
-    return OpenAILLMProvider(api_key=api_key, model=settings.LLM_MODEL, temperature=settings.TEMPERATURE)
+    return get_llm(settings)
 
 
 def _load_policy_text(policy_path: Path, batch_service: BatchExpenseService) -> str:

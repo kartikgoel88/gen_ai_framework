@@ -12,8 +12,11 @@ class FrameworkSettings(BaseSettings):
     LLM_MODEL: str = "gpt-4-turbo-preview"
     TEMPERATURE: float = 0.7
 
-    # LLM provider: openai | grok | gemini | huggingface
+    # LLM provider: openai | grok | gemini | huggingface | local (PII-safe, no data leaves host)
     LLM_PROVIDER: str = "openai"
+    # Local LLM (Ollama, LM Studio, etc.): OpenAI-compatible base URL and model
+    LLM_LOCAL_BASE_URL: str = "http://localhost:11434/v1"
+    LLM_LOCAL_MODEL: str = "llama3.2"
     # Grok (xAI): OpenAI-compatible API at api.x.ai
     XAI_API_KEY: Optional[str] = None
     # Gemini (Google)

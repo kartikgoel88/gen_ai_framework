@@ -29,6 +29,7 @@ Available Providers:
     - grok: xAI Grok models (OpenAI-compatible API)
     - gemini: Google Gemini models
     - huggingface: HuggingFace models
+    - local: Local OpenAI-compatible endpoint (Ollama, LM Studio; PII-safe)
 """
 
 from typing import Callable, Dict, Optional, Any
@@ -168,6 +169,13 @@ def _register_builtin_providers():
                 "Set LLM_PROVIDER=huggingface and HUGGINGFACE_API_KEY."
             )
         return HuggingFaceLLMProvider(api_key=api_key, model=model, temperature=temperature)
+
+    from .local_provider import LocalLLMProvider
+
+    @LLMProviderRegistry.register("local")
+    def create_local(api_key: Optional[str], model: str, temperature: float, **kwargs):
+        base_url = kwargs.get("base_url") or "http://localhost:11434/v1"
+        return LocalLLMProvider(base_url=base_url, model=model, temperature=temperature, api_key=api_key)
 
 
 # Register providers on module import
