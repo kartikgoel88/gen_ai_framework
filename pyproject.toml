@@ -70,6 +70,9 @@ dev = ["pytest>=7.4.3", "pytest-asyncio>=0.21.1", "black>=23.11.0", "ruff>=0.1.6
 
 [project.scripts]
 batch-run = "src.clients.batch.runner:main"
+batch-expense-bills = "scripts.batch.batch_expense_bills:main"
+batch-rag-ingest = "scripts.batch.batch_rag_ingest:main"
+batch-rag-queries = "scripts.batch.batch_rag_queries:main"
 rag-cli = "src.clients.cli.rag_cli:main"
 agent-cli = "src.clients.cli.agent_cli:main"
 rag-agent-cli = "src.clients.cli.rag_agent_cli:main"
@@ -81,7 +84,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src"]
+packages = ["src", "scripts"]
 
 [tool.black]
 line-length = 100

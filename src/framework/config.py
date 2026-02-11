@@ -37,7 +37,8 @@ class FrameworkSettings(BaseSettings):
     SECRET_KEY: str = "change-me"
     DEBUG: bool = True
 
-    UPLOAD_DIR: str = "./uploads"
+    UPLOAD_DIR: str = "./data/uploads"
+    OUTPUT_DIR: str = "./data/output"
     MAX_UPLOAD_SIZE: int = 10485760
 
     # MCP (optional): command and args for stdio server, e.g. ["python", "mcp_server.py"]

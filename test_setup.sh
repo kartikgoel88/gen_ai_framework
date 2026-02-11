@@ -17,8 +17,8 @@ echo "Syncing dependencies..."
 uv sync
 
 # Create test fixture and output directories
-mkdir -p tests/fixtures/data/batch/bills output/batch
-echo "Created tests/fixtures/data/batch/, tests/fixtures/data/batch/bills/, output/batch/."
+mkdir -p tests/fixtures/data/batch/bills data/output/batch
+echo "Created tests/fixtures/data/batch/, tests/fixtures/data/batch/bills/, data/output/batch/."
 
 # Seed minimal fixtures if missing (so batch test can run without cloning fixtures)
 BATCH_DIR="tests/fixtures/data/batch"

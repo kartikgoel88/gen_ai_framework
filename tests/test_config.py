@@ -15,7 +15,8 @@ def test_framework_settings_defaults():
     assert settings.CHUNKING_STRATEGY == "recursive_character"
     assert settings.PROMPTS_BASE_PATH == "./data/prompts"
     assert settings.VECTOR_STORE == "chroma"
-    assert settings.UPLOAD_DIR == "./uploads"
+    assert settings.UPLOAD_DIR == "./data/uploads"
+    assert settings.OUTPUT_DIR == "./data/output"
     assert settings.DEBUG is True
 
 

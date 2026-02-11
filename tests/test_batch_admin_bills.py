@@ -79,7 +79,7 @@ def test_batch_read_from_data_write_to_output(
 ):
     """
     Read policy and bill files from data folder (tests/fixtures/data/batch),
-    run batch processing, write results to output folder (output/batch).
+    run batch processing, write results to data/output/batch.
     """
     # --- Read inputs from data folder ---
     policy_path = data_batch_dir / "policy.txt"

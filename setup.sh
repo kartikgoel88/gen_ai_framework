@@ -26,9 +26,9 @@ else
 fi
 
 # Create directories used by the app and UI
-mkdir -p uploads uploads/ui_uploads uploads/batch_bills uploads/batch_zips uploads/batch_folders
-mkdir -p data/chroma_db data/prompts data/feedback data/golden output/batch
-echo "Created uploads/ (and subdirs), data/, output/batch/."
+mkdir -p data/uploads data/uploads/ui_uploads data/uploads/batch_bills data/uploads/batch_zips data/uploads/batch_folders
+mkdir -p data/chroma_db data/prompts data/feedback data/golden data/output/batch
+echo "Created data/uploads/, data/ (chroma_db, prompts, feedback, golden), data/output/batch/."
 
 # Optional: Tesseract for PDF OCR (scanned/image-only PDFs)
 if command -v tesseract &> /dev/null; then

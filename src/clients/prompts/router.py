@@ -18,7 +18,7 @@ router = APIRouter(prefix="/prompts", tags=["prompts"])
 
 
 def _get_prompt_store(settings: FrameworkSettings = Depends(get_settings_dep)) -> PromptStore:
-    return PromptStore(base_path=getattr(settings, "PROMPTS_BASE_PATH", "./data/prompts"))
+    return PromptStore(base_path=getattr(settings, "PROMPTS_BASE_PATH", None))
 
 
 # --- Versioned prompts ---

@@ -101,7 +101,8 @@ class FrameworkSettingsNested(BaseSettings):
     # Core settings
     secret_key: str = "change-me"
     debug: bool = True
-    upload_dir: str = "./uploads"
+    upload_dir: str = "./data/uploads"
+    output_dir: str = Field(default="./data/output", alias="OUTPUT_DIR", description="Base path for output (e.g. batch results)")
     max_upload_size: int = 10485760
     
     # Nested settings groups
@@ -179,6 +180,9 @@ class FrameworkSettingsNested(BaseSettings):
         # Process flat env vars
         nested_kwargs = {}
         for key, value in kwargs.items():
+            if key == "OUTPUT_DIR":
+                nested_kwargs["output_dir"] = value
+                continue
             if key in flat_to_nested:
                 group, attr = flat_to_nested[key]
                 if group not in nested_kwargs:
@@ -353,3 +357,7 @@ class FrameworkSettingsNested(BaseSettings):
     @property
     def MCP_ARGS(self) -> Optional[str]:
         return self.mcp.args
+
+    @property
+    def OUTPUT_DIR(self) -> str:
+        return self.output_dir

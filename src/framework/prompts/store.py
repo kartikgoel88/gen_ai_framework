@@ -5,6 +5,11 @@ from pathlib import Path
 from typing import Optional
 
 
+def _default_prompts_base_path() -> str:
+    from ..config import get_settings
+    return get_settings().PROMPTS_BASE_PATH
+
+
 @dataclass
 class PromptVersion:
     """Single version of a prompt: name, version tag, body."""
@@ -22,8 +27,8 @@ class PromptVersion:
 class PromptStore:
     """File-based versioned prompt store. Layout: base_path/{name}_{version}.txt or base_path/{name}/{version}.txt."""
 
-    def __init__(self, base_path: str = "./data/prompts"):
-        self._base = Path(base_path)
+    def __init__(self, base_path: Optional[str] = None):
+        self._base = Path(base_path or _default_prompts_base_path())
         self._base.mkdir(parents=True, exist_ok=True)
 
     def _path_for(self, name: str, version: str) -> Path:

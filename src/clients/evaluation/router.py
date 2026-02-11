@@ -17,7 +17,7 @@ router = APIRouter(prefix="/evaluation", tags=["evaluation"])
 
 
 def _feedback_store(settings: FrameworkSettings = Depends(get_settings_dep)) -> FeedbackStore:
-    return FeedbackStore(path=getattr(settings, "FEEDBACK_STORE_PATH", "./data/feedback/feedback.jsonl"))
+    return FeedbackStore(path=getattr(settings, "FEEDBACK_STORE_PATH", None))
 
 
 # --- Golden datasets (regression) ---

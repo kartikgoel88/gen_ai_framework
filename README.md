@@ -88,7 +88,7 @@ From the project root:
 ./setup.sh
 ```
 
-This creates `.venv` (if missing), installs deps (`pip install -e ".[dev]"`), copies `.env.example` to `.env` if needed, and creates `uploads/`, `data/chroma_db/`, `data/prompts/`, `data/feedback/`, `data/golden/`, `output/batch/`. Then edit `.env` and set `OPENAI_API_KEY`.
+This creates `.venv` (if missing), installs deps (`pip install -e ".[dev]"`), copies `.env.example` to `.env` if needed, and creates `data/uploads/`, `data/chroma_db/`, `data/prompts/`, `data/feedback/`, `data/golden/`, `data/output/batch/`. Then edit `.env` and set `OPENAI_API_KEY`.
 
 Manual setup:
 
@@ -243,7 +243,7 @@ pytest tests/ -v
 - **Chains:** `tests/test_chains.py` — PromptChain, RAGChain, SummarizationChain, ClassificationChain, ExtractionChain, Pipeline with mock LLM.
 - **Graphs:** `tests/test_graphs.py` — RAG graph invoke with mock LLM/RAG.
 - **Agents:** `tests/test_agents.py` — Agent tools list and invoke with mock LLM/tools.
-- **Batch:** `tests/test_batch_admin_bills.py` — Batch processing from fixtures, writes `output/batch/results.json` (mock LLM).
+- **Batch:** `tests/test_batch_admin_bills.py` — Batch processing from fixtures, writes `data/output/batch/results.json` (mock LLM).
 
 No API keys required for the above tests (mocks used). For batch test, put `policy.txt` and bill files in `tests/fixtures/data/batch/` (and optional `bills/` subfolder).
 

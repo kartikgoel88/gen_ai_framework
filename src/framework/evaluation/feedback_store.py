@@ -6,6 +6,11 @@ from pathlib import Path
 from typing import Any, Optional
 from datetime import datetime, timezone
 
+
+def _default_feedback_path() -> str:
+    from ..config import get_settings
+    return get_settings().FEEDBACK_STORE_PATH
+
 UTC_FMT = "%Y-%m-%dT%H:%M:%SZ"
 
 
@@ -51,8 +56,8 @@ class FeedbackEntry:
 class FeedbackStore:
     """File-based feedback store (JSONL). Append-only for fine-tuning export."""
 
-    def __init__(self, path: str = "./data/feedback/feedback.jsonl"):
-        self._path = Path(path)
+    def __init__(self, path: Optional[str] = None):
+        self._path = Path(path or _default_feedback_path())
         self._path.parent.mkdir(parents=True, exist_ok=True)
 
     def add(

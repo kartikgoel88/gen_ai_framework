@@ -287,7 +287,9 @@ Return only valid JSON."""
         try:
             result = self._llm.invoke_structured(prompt)
             decision = (result.get("decision") or "REJECTED").upper()
-            reason = result.get("reason") or "No reason provided"
+            reason = (result.get("reason") or "No reason provided").strip()
+            if not reason:
+                reason = "No reason provided"
             if "APPROVE" in decision and "REJECT" not in decision:
                 decision = "APPROVED"
             else:
@@ -462,13 +464,17 @@ One element per group, in the same order as the groups. Return only valid JSON a
             decision = (dec.get("decision") or "REJECT").upper()
             decision = "APPROVED" if "APPROVE" in decision and "REJECT" not in decision else "REJECTED"
             reasons = dec.get("reasons") or [dec.get("reason", "")]
-            reason = "; ".join(reasons) if isinstance(reasons, list) else str(reasons)
+            reason = "; ".join(str(r).strip() for r in (reasons if isinstance(reasons, list) else [reasons]) if str(r).strip())
+            if not reason:
+                reason = "No reason provided by approver"
             for bid in g["valid_bill_ids"] + g["invalid_bill_ids"]:
                 decision_by_bill_id[bid] = (decision, reason)
 
         results = []
         for b in bills_with_meta:
             dec, reason = decision_by_bill_id.get(b["bill_id"], ("REJECTED", "No group decision"))
+            if not (reason or "").strip():
+                reason = "No reason provided"
             results.append({
                 "file_name": b["file_name"],
                 "bill_type": b["bill_type"],

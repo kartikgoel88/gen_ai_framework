@@ -58,7 +58,7 @@ def _get_folder_paths(
         zip_path = Path(zip_path)
         if not zip_path.is_file():
             raise FileNotFoundError(f"ZIP not found: {zip_path}")
-        base = Path(extract_root) if extract_root else Path("./uploads/batch_runner_extract")
+        base = Path(extract_root) if extract_root else Path(get_settings().UPLOAD_DIR) / "batch_runner_extract"
         root = base / zip_path.stem
         root.mkdir(parents=True, exist_ok=True)
         with zipfile.ZipFile(zip_path, "r") as zf:
@@ -82,14 +82,14 @@ def run(
     zip_path: Path | None = None,
     client_addresses_path: Path | None = None,
     output_path: Path | None = None,
-    upload_dir: str | Path = "./uploads",
+    upload_dir: str | Path | None = None,
 ) -> dict:
     """
     Run batch processing: policy once, one folder per employee.
     Returns the same structure as process_folders (folders + summary).
     """
     settings = get_settings()
-    upload_dir = Path(upload_dir)
+    upload_dir = Path(upload_dir if upload_dir is not None else settings.UPLOAD_DIR)
     upload_dir.mkdir(parents=True, exist_ok=True)
 
     ocr = OcrProcessor(pdf_dpi=300, pdf_min_text_len=10)
@@ -118,6 +118,7 @@ def run(
         policy_text=policy_text,
         client_addresses=client_addresses,
     )
+    out["policy_preview"] = policy_text[:3000] if policy_text else ""
     return out
 
 
@@ -133,7 +134,7 @@ def main() -> int:
     group.add_argument("--zip", "-z", type=Path, help="Path to ZIP whose top-level entries are employee folders.")
     parser.add_argument("--client-addresses", "-c", type=Path, help="Path to JSON file: {\"TESCO\": [\"addr1\"], \"AMEX\": [\"addr2\"]} for cab address validation.")
     parser.add_argument("--output", "-o", type=Path, help="Write results JSON to this file; default stdout.")
-    parser.add_argument("--upload-dir", type=Path, default=Path("./uploads"), help="Upload/temp directory (default: ./uploads).")
+    parser.add_argument("--upload-dir", type=Path, default=None, help="Upload/temp directory (default: from config UPLOAD_DIR).")
     args = parser.parse_args()
 
     try:

@@ -506,7 +506,7 @@ with tab_prompts:
         from src.framework.config import get_settings
         from src.framework.prompts.store import PromptStore
         settings = get_settings()
-        base = getattr(settings, "PROMPTS_BASE_PATH", "./data/prompts")
+        base = getattr(settings, "PROMPTS_BASE_PATH", None)
         store = PromptStore(base_path=base)
         names = store.list_names()
     except Exception as e:

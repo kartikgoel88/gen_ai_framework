@@ -5,8 +5,6 @@ venv/
 .env
 .env.local
 *.db
-uploads/
 data/
-output/
 .pytest_cache/
 .DS_Store

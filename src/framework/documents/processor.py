@@ -24,9 +24,12 @@ class DocumentProcessor(BaseDocumentProcessor):
 
     def __init__(
         self,
-        upload_dir: str = "./uploads",
+        upload_dir: str | None = None,
         pdf_processor: Optional["OcrProcessor"] = None,
     ):
+        if upload_dir is None:
+            from ..config import get_settings
+            upload_dir = get_settings().UPLOAD_DIR
         self.upload_dir = Path(upload_dir)
         self.upload_dir.mkdir(parents=True, exist_ok=True)
         self._pdf_processor = pdf_processor
