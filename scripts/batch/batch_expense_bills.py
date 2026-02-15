@@ -32,10 +32,10 @@ if str(_PROJECT_ROOT) not in sys.path:
 # -----------------------------------------------------------------------------
 # CONFIG — edit for your run
 # -----------------------------------------------------------------------------
-POLICY_PATH = Path("data/uploads/ui_uploads/company_policy.pdf")
+POLICY_PATH = Path("data/uploads/policy/company_policy.pdf")
 # Optional: prepended to policy text so approval rules (mandatory vs optional fields) are applied first
-POLICY_RULES_PATH = Path("data/uploads/ui_uploads/approval_rules.txt")
-FOLDERS_DIR = Path("data/uploads/batch_bills")  # or None
+POLICY_RULES_PATH = Path("data/uploads/policy/approval_rules.txt")
+FOLDERS_DIR = Path("data/uploads/batch_bills/processed_inputs/meal")  # or None
 ZIP_PATH = None
 CLIENT_ADDRESSES_PATH = None
 OUTPUT_PATH = None
