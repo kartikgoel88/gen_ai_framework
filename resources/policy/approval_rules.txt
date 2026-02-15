@@ -1,0 +1,7 @@
+Approval rules for expense approver:
+
+- Mandatory for APPROVE: only (1) amount in INR present and within policy limits, and (2) bill type matches a policy category (e.g. cab, meals). Nothing else is mandatory.
+
+- Optional (do not reject solely for absence): rider name, exact date, base location, pro-rata details, vendor name. If these are missing or unclear, still APPROVE provided amount and category are acceptable.
+
+- REJECT only if: amount is missing or above the stated limit, or bill type is not covered by policy. Do not REJECT for missing optional details.
