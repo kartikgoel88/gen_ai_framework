@@ -5,6 +5,12 @@ from dataclasses import dataclass
 from enum import Enum
 
 from .base import AgentBase
+from .planning_prompts import (
+    format_plan_create,
+    format_step_execute,
+    format_plan_revise,
+    format_result_compile,
+)
 
 
 class PlanStatus(Enum):
@@ -103,17 +109,7 @@ class PlanningAgent(AgentBase):
     
     def _create_plan(self, goal: str) -> ExecutionPlan:
         """Create an execution plan for the goal."""
-        planning_prompt = f"""Create a detailed step-by-step plan to accomplish the following goal:
-
-Goal: {goal}
-
-Provide a numbered list of specific, actionable steps. Each step should be clear and executable.
-Format: 
-1. Step description
-2. Step description
-..."""
-        
-        plan_text = self._base_agent.invoke(planning_prompt)
+        plan_text = self._base_agent.invoke(format_plan_create(goal))
         
         # Parse plan into steps
         steps = self._parse_plan(plan_text)
@@ -159,12 +155,8 @@ Format:
             step.status = PlanStatus.IN_PROGRESS
             
             try:
-                # Execute step
-                step_prompt = f"""Execute this step: {step.description}
-                
-Context: Working towards goal: {plan.goal}
-Previous steps completed: {[s.description for s in plan.steps if s.status == PlanStatus.COMPLETED]}"""
-                
+                previous = [s.description for s in plan.steps if s.status == PlanStatus.COMPLETED]
+                step_prompt = format_step_execute(step.description, plan.goal, previous)
                 result = self._base_agent.invoke(step_prompt, **kwargs)
                 step.result = result
                 step.status = PlanStatus.COMPLETED
@@ -183,19 +175,19 @@ Previous steps completed: {[s.description for s in plan.steps if s.status == Pla
     def _revise_plan(self, plan: ExecutionPlan, original_goal: str) -> ExecutionPlan:
         """Revise plan based on failures."""
         failed_steps = [s for s in plan.steps if s.status == PlanStatus.FAILED]
-        
-        revision_prompt = f"""The following plan failed. Revise it to address the failures.
-
-Original Goal: {original_goal}
-
-Failed Steps:
-{chr(10).join(f"{s.step_number}. {s.description} - Error: {s.error}" for s in failed_steps)}
-
-Completed Steps:
-{chr(10).join(f"{s.step_number}. {s.description}" for s in plan.steps if s.status == PlanStatus.COMPLETED)}
-
-Create a revised plan that addresses the failures and continues from where we left off."""
-        
+        failed_lines = [
+            f"{s.step_number}. {s.description} - Error: {s.error}" for s in failed_steps
+        ]
+        completed_lines = [
+            f"{s.step_number}. {s.description}"
+            for s in plan.steps
+            if s.status == PlanStatus.COMPLETED
+        ]
+        revision_prompt = format_plan_revise(
+            original_goal,
+            "\n".join(failed_lines),
+            "\n".join(completed_lines),
+        )
         revised_plan_text = self._base_agent.invoke(revision_prompt)
         
         # Parse revised plan
@@ -212,15 +204,15 @@ Create a revised plan that addresses the failures and continues from where we le
     def _compile_result(self, plan: ExecutionPlan) -> str:
         """Compile final result from plan execution."""
         if plan.status == PlanStatus.COMPLETED:
-            compilation_prompt = f"""Compile a final summary based on the completed plan execution.
-
-Goal: {plan.goal}
-
-Completed Steps and Results:
-{chr(10).join(f"Step {s.step_number}: {s.description}\nResult: {s.result}" for s in plan.steps if s.status == PlanStatus.COMPLETED)}
-
-Provide a comprehensive final answer."""
-            
+            completed_parts = [
+                f"Step {s.step_number}: {s.description}\nResult: {s.result or '(none)'}"
+                for s in plan.steps
+                if s.status == PlanStatus.COMPLETED
+            ]
+            compilation_prompt = format_result_compile(
+                plan.goal,
+                "\n\n".join(completed_parts),
+            )
             return self._base_agent.invoke(compilation_prompt)
         else:
             # Return partial results

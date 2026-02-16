@@ -32,7 +32,7 @@ if str(_PROJECT_ROOT) not in sys.path:
 # -----------------------------------------------------------------------------
 # CONFIG — edit for your run
 # -----------------------------------------------------------------------------
-POLICY_PATH = Path("/resources/policy/company_policy.pdf")
+POLICY_PATH = Path("resources/policy/company_policy.pdf")
 # Optional: prepended to policy text so approval rules (mandatory vs optional fields) are applied first
 POLICY_RULES_PATH = Path("resources/policy/approval_rules.txt")
 FOLDERS_DIR = Path("data/uploads/batch_bills/processed_inputs/meal")  # or None
@@ -319,16 +319,27 @@ def validate_bill(
 # POLICY EVALUATION (LLM)
 # =============================================================================
 
+# Bill types we classify; always treat as valid categories if policy allows similar
+_VALID_BILL_TYPE_CATEGORIES = {BILL_TYPE_CAB, BILL_TYPE_MEALS}
+
+
 def evaluate_policy(
     bill_type: str,
     extracted: dict,
     policy_text: str,
     llm: Any,
+    policy_categories: Optional[list[str]] = None,
 ) -> tuple[str, str]:
     """Decide APPROVE/REJECT and reason using policy text and bill data."""
     if not (policy_text or "").strip():
         policy_text = "Default: approve if amount is reasonable; reject if amount missing or suspicious."
+    # Ensure cab and meals are always listed as valid so LLM does not reject our bill_type
+    valid_cats = set(policy_categories or []) | _VALID_BILL_TYPE_CATEGORIES
+    valid_cats_str = ", ".join(sorted(valid_cats))
     prompt = f"""You are an expense approver. Apply the following admin policy to this bill and decide APPROVE or REJECT. Then give a short reason.
+
+Valid expense categories for this policy (bill type must match one of these): {valid_cats_str}.
+Treat "cab" and "meals" as valid categories when they appear in this list or in the policy text.
 
 Admin policy text:
 {policy_text[:2000]}
@@ -366,6 +377,7 @@ def process_one_bill(
     doc_processor: Any,
     ocr_processor: Any,
     llm: Any,
+    policy_categories: Optional[list[str]] = None,
 ) -> dict[str, Any]:
     """Extract, classify, extract fields, validate, evaluate policy. Return one result dict."""
     if not path.exists():
@@ -383,7 +395,7 @@ def process_one_bill(
     bill_type = classify_bill_type(text, path.name, llm)
     extracted = extract_bill_fields(text, bill_type, llm)
     validation, bill_id = validate_bill(bill_type, extracted, path.name, employee_context, client_addresses)
-    decision, reason = evaluate_policy(bill_type, extracted, policy_text, llm)
+    decision, reason = evaluate_policy(bill_type, extracted, policy_text, llm, policy_categories=policy_categories)
     return {
         "file_name": path.name,
         "bill_type": bill_type,
@@ -407,6 +419,7 @@ def process_employee_folder(
     doc_processor: Any,
     ocr_processor: Any,
     llm: Any,
+    policy_categories: Optional[list[str]] = None,
 ) -> tuple[dict, list[dict]]:
     """Process all bill files in one employee folder. Returns (employee_context, results)."""
     folder_path = Path(folder_path)
@@ -419,6 +432,7 @@ def process_employee_folder(
         r = process_one_bill(
             path, policy_text, employee_context, client_addresses,
             doc_processor, ocr_processor, llm,
+            policy_categories=policy_categories,
         )
         results.append(r)
     return employee_context, results
@@ -435,6 +449,7 @@ def process_all_folders(
     doc_processor: Any,
     ocr_processor: Any,
     llm: Any,
+    policy_categories: Optional[list[str]] = None,
 ) -> dict[str, Any]:
     """Process each employee folder; return {folders: [...], summary: {approved, rejected, total}}."""
     folders_out = []
@@ -447,6 +462,7 @@ def process_all_folders(
         employee_context, results = process_employee_folder(
             folder_path, policy_text, client_addresses,
             doc_processor, ocr_processor, llm,
+            policy_categories=policy_categories,
         )
         approved = sum(1 for r in results if (r.get("decision") or "").upper() == "APPROVED")
         rejected = len(results) - approved
@@ -588,6 +604,7 @@ class ExpenseBillsBatchRunner(BaseBatchRunner):
             if len(subdirs) > 5:
                 print(f"  ... and {len(subdirs) - 5} more")
 
+        policy_categories = (policy_extract or {}).get("policy_categories")
         if not folder_paths:
             result = {"folders": [], "summary": {"approved": 0, "rejected": 0, "total": 0}}
         else:
@@ -596,6 +613,7 @@ class ExpenseBillsBatchRunner(BaseBatchRunner):
                 lambda: process_all_folders(
                     folder_paths, policy_text, client_addresses,
                     doc_processor, ocr, llm,
+                    policy_categories=policy_categories,
                 ),
                 max_attempts=args.retries,
                 initial_delay=2.0,
