@@ -1,0 +1,15 @@
+# DeepSeek-OCR script (scripts/deepseek_ocr.py)
+# Install: pip install -r scripts/requirements-deepseek-ocr.txt
+# DeepSeek-OCR model code imports LlamaFlashAttention2; only present in transformers 4.47.x.
+# Newer transformers (4.48+) refactored Llama and break this import.
+transformers>=4.46.0,<4.48.0
+torch>=2.0.0
+Pillow>=10.0.0
+requests>=2.28.0
+addict>=2.4.0
+einops>=0.7.0
+easydict>=1.10.0
+
+# Optional: faster GPU inference on CUDA. If you get LlamaFlashAttention2 import error, use:
+#   pip install torch==2.6.0 transformers==4.47.1
+#   pip install flash-attn==2.7.3 --no-build-isolation

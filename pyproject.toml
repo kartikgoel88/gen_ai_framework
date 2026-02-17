@@ -67,8 +67,19 @@ vectorstore-weaviate = ["weaviate-client>=4.0.0"]
 vectorstore-qdrant = ["qdrant-client>=1.7.0"]
 vectorstore-pgvector = ["psycopg2-binary>=2.9.0", "pgvector>=0.2.0"]
 # OCR: image enhancement (Real-ESRGAN + CLAHE) and PaddleOCR
-ocr-enhance = ["realesrgan>=0.3.0", "basicsr>=1.4.2", "torch>=1.7.0", "torchvision"]
+# Real-ESRGAN (realesrgan) pulls in basicsr, which fails to build on Python 3.13.
+# This extra only adds torch/torchvision; CLAHE works. For Real-ESRGAN on 3.11/3.12 run:
+#   pip install realesrgan my-basicsr
+ocr-enhance = ["torch>=1.7.0", "torchvision"]
 paddle = ["paddlepaddle>=2.5.0", "paddleocr>=2.7.0"]
+# DeepSeek-OCR script (scripts/deepseek_ocr.py). Requires transformers 4.47.x (LlamaFlashAttention2).
+deepseek-ocr = [
+    "transformers>=4.46.0,<4.48.0",
+    "torch>=2.0.0",
+    "addict>=2.4.0",
+    "einops>=0.7.0",
+    "easydict>=1.10.0",
+]
 dev = ["pytest>=7.4.3", "pytest-asyncio>=0.21.1", "black>=23.11.0", "ruff>=0.1.6"]
 
 [project.scripts]
