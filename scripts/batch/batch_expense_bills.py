@@ -42,6 +42,9 @@ OUTPUT_PATH = None
 MODEL_OVERRIDE = None
 RETRIES = 3
 DRY_RUN = False
+# OCR: refactored pipeline (PDFProcessor + ImageProcessor + strategy). One of: easyocr, pytesseract, paddle
+OCR_BACKEND = "easyocr"
+USE_IMAGE_ENHANCEMENT = False
 # -----------------------------------------------------------------------------
 
 # Bill types and allowed file extensions
@@ -558,7 +561,7 @@ class ExpenseBillsBatchRunner(BaseBatchRunner):
     def run_batch(self, args: SimpleNamespace) -> dict[str, Any]:
         from src.framework.config import get_settings
         from src.framework.api.deps_llm import get_llm
-        from src.framework.documents import OcrProcessor
+        from src.framework.documents.processors import OcrProcessor
         from src.framework.documents.processor import DocumentProcessor
 
         if args.model is not None:
@@ -567,7 +570,12 @@ class ExpenseBillsBatchRunner(BaseBatchRunner):
         upload_dir = Path(settings.UPLOAD_DIR)
         upload_dir.mkdir(parents=True, exist_ok=True)
 
-        ocr = OcrProcessor(pdf_dpi=300, pdf_min_text_len=10)
+        ocr = OcrProcessor(
+            pdf_dpi=300,
+            pdf_min_text_len=10,
+            ocr_backend=OCR_BACKEND,
+            use_image_enhancement=USE_IMAGE_ENHANCEMENT,
+        )
         doc_processor = DocumentProcessor(upload_dir=str(upload_dir), pdf_processor=ocr)
         llm = get_llm(settings)
         client_addresses = load_json_file(args.client_addresses)
@@ -576,6 +584,7 @@ class ExpenseBillsBatchRunner(BaseBatchRunner):
         print(f"  Policy: {args.policy}")
         print(f"  Input:  {'folders ' + str(args.folders) if args.folders else 'zip ' + str(args.zip)}")
         print(f"  Output: {args.output}")
+        print(f"  OCR: backend={OCR_BACKEND}, enhancement={USE_IMAGE_ENHANCEMENT}")
         print(f"  Config: UPLOAD_DIR={settings.UPLOAD_DIR}, LLM_MODEL={settings.LLM_MODEL}, LLM_PROVIDER={settings.LLM_PROVIDER}")
         if (getattr(settings, "LLM_PROVIDER", "") or "").lower() == "local":
             print("  Note: LLM_PROVIDER=local — ensure Ollama is running: ollama serve && ollama run llama3.2")

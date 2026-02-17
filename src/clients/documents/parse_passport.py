@@ -109,7 +109,7 @@ def _processor_for_method(method: str) -> BaseDocumentProcessor:
     if method == "docling":
         from src.framework.docling.processor import DoclingProcessor
         return DoclingProcessor(default_export_format="text")
-    return OcrProcessor(use_pytesseract_for_images=True)
+    return OcrProcessor(ocr_backend="pytesseract")
 
 
 def parse_passport_images(
